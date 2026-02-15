@@ -37,7 +37,7 @@ function formatIngredient(ing: { quantity: string; unit: string; item: string })
   return [ing.quantity, ing.unit, ing.item].filter(Boolean).join(" ");
 }
 
-export function RecipeCard({ recipe }: { recipe: ParsedRecipe }) {
+export function RecipeCard({ recipe, source }: { recipe: ParsedRecipe; source?: "structured" | "ai" }) {
   return (
     <div className="w-full max-w-2xl space-y-5 sm:space-y-8">
       {/* Title */}
@@ -45,14 +45,27 @@ export function RecipeCard({ recipe }: { recipe: ParsedRecipe }) {
         <h2 className="text-2xl font-bold tracking-tight text-neutral-800 sm:text-3xl">
           {recipe.title}
         </h2>
-        <a
-          href={recipe.source}
-          target="_blank"
-          rel="noopener noreferrer"
-          className="text-sm text-[#7C9070] underline underline-offset-2 hover:text-[#6B7F60]"
-        >
-          View original recipe
-        </a>
+        <div className="flex items-center justify-center gap-3">
+          <a
+            href={recipe.source}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="text-sm text-[#7C9070] underline underline-offset-2 hover:text-[#6B7F60]"
+          >
+            View original recipe
+          </a>
+          {source === "ai" && (
+            <span className="inline-flex items-center gap-1 rounded-full bg-purple-100 px-2 py-0.5 text-xs font-medium text-purple-700">
+              <svg className="h-3 w-3" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M12 2a4 4 0 0 1 4 4c0 1.95-1.4 3.58-3.25 3.93L12 22" />
+                <path d="M12 2a4 4 0 0 0-4 4c0 1.95 1.4 3.58 3.25 3.93" />
+                <path d="M8 10a2.5 2.5 0 0 0 0 5" />
+                <path d="M16 10a2.5 2.5 0 0 1 0 5" />
+              </svg>
+              AI extracted
+            </span>
+          )}
+        </div>
       </div>
 
       {/* Meta Pills */}

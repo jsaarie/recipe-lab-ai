@@ -45,14 +45,26 @@ The MVP focuses on a single, well-executed feature:
 
 ## Future Roadmap (Post-MVP)
 
+The roadmap is centered around **The Lab** — a guided cooking HUD that takes users step-by-step through a recipe as they cook. Features build progressively toward a polished V1.0 Lab experience.
+
+| Phase | Focus | Features |
+|-------|-------|----------|
+| v0.2 | Lab Foundation | Cooking HUD entry point ("Cook" button), full-screen single-step view with large Next/Back tap targets, collapsible mini-overview strip for step jumping, progress indicator (Step N of M) |
+| v0.3 | Smart Ingredients | AI-powered per-step ingredient mapping shown in the HUD, expandable full ingredient list panel |
+| v0.4 | Timers | Optional user-triggered step timers, up to 3 concurrent timers in a visible timer tray, audio/visual alerts on completion |
+| v0.5 | State & Navigation | Full state persistence when flipping between Lab and recipe view (step position + running timers), smooth transitions between views |
+| v0.6 | Polish & Mobile | HUD optimized for kitchen use (large touch targets, high-contrast layout), responsive design tuning, performance optimization |
+| v1.0 | The Lab Complete | Fully integrated guided cooking experience — confirm a recipe, enter the Lab, cook step-by-step with per-step ingredients, timers, and seamless recipe/Lab switching |
+
+### Post-V1.0 Horizon
+
 | Phase | Features |
 |-------|----------|
-| v0.2 | User accounts (NextAuth/Clerk), save recipes to MongoDB collections |
-| v0.3 | Scaling & Conversion, a generative component that allows the user to easily adjust quantites without complex caculations and conversions |
-| v0.4 | Smart ingredient substitutions based on availability |
-| v0.5 | Built-in timers, technique tips, and pro cooking advice |
-| v0.6 | Meal planning and grocery list generation |
-| v1.0 | Full-featured personal sous-chef experience |
+| v1.1 | User accounts and authentication, save recipes to personal collections |
+| v1.2 | Scaling and unit conversion — adjust servings with auto-recalculated quantities |
+| v1.3 | Smart ingredient substitutions based on availability |
+| v1.4 | Meal planning and grocery list generation |
+| v2.0 | Voice-controlled Lab navigation, technique tips, and pro cooking advice |
 
 ## Success Metrics (MVP)
 

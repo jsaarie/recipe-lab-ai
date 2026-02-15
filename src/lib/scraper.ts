@@ -1,0 +1,211 @@
+import * as cheerio from "cheerio";
+import type { ParsedRecipe } from "@/types/recipe";
+
+export type ScrapeResult =
+  | { type: "structured"; recipe: ParsedRecipe }
+  | { type: "raw"; content: string };
+
+export async function scrapeRecipePage(url: string): Promise<ScrapeResult> {
+  const res = await fetch(url, {
+    headers: {
+      "User-Agent":
+        "Mozilla/5.0 (compatible; RecipeLabAI/1.0; +https://recipe-lab-ai.vercel.app)",
+    },
+    signal: AbortSignal.timeout(10000),
+  });
+
+  if (!res.ok) {
+    throw new Error(`Failed to fetch page: ${res.status} ${res.statusText}`);
+  }
+
+  const html = await res.text();
+  const $ = cheerio.load(html);
+
+  // Try JSON-LD structured data first — free, no AI needed
+  const jsonLd = $('script[type="application/ld+json"]');
+  let recipeData: Record<string, unknown> | null = null;
+
+  jsonLd.each((_, el) => {
+    if (recipeData) return; // already found one
+    try {
+      const data = JSON.parse($(el).text());
+      const recipes = findRecipeObjects(data);
+      if (recipes.length > 0) {
+        recipeData = recipes[0] as Record<string, unknown>;
+      }
+    } catch {
+      // Ignore malformed JSON-LD
+    }
+  });
+
+  // If we have structured data, try to map it directly
+  if (recipeData) {
+    const mapped = mapJsonLdToRecipe(recipeData, url);
+    if (mapped) {
+      return { type: "structured", recipe: mapped };
+    }
+    // If mapping failed (missing key fields), send JSON-LD as raw text for AI
+    return { type: "raw", content: JSON.stringify(recipeData, null, 2) };
+  }
+
+  // Remove non-content elements for text extraction
+  $(
+    "script, style, nav, header, footer, aside, iframe, noscript, svg, .ad, .ads, .advertisement, [role='banner'], [role='navigation'], [role='complementary']"
+  ).remove();
+
+  // Fallback: extract text from likely recipe containers
+  const selectors = [
+    '[itemtype*="Recipe"]',
+    ".recipe",
+    "#recipe",
+    '[class*="recipe"]',
+    "article",
+    "main",
+  ];
+
+  for (const selector of selectors) {
+    const el = $(selector).first();
+    if (el.length) {
+      const text = el.text().replace(/\s+/g, " ").trim();
+      if (text.length > 200) {
+        return { type: "raw", content: truncateContent(text) };
+      }
+    }
+  }
+
+  // Last resort: body text
+  const bodyText = $("body").text().replace(/\s+/g, " ").trim();
+  return { type: "raw", content: truncateContent(bodyText) };
+}
+
+function mapJsonLdToRecipe(
+  data: Record<string, unknown>,
+  sourceUrl: string
+): ParsedRecipe | null {
+  const title = asString(data.name);
+  const ingredients = parseIngredients(data.recipeIngredient);
+  const instructions = parseInstructions(data.recipeInstructions);
+
+  // Need at least title + ingredients or instructions to be useful
+  if (!title || (ingredients.length === 0 && instructions.length === 0)) {
+    return null;
+  }
+
+  return {
+    title,
+    source: sourceUrl,
+    prepTime: parseDuration(data.prepTime),
+    cookTime: parseDuration(data.cookTime),
+    totalTime: parseDuration(data.totalTime),
+    servings: parseServings(data.recipeYield),
+    ingredients,
+    instructions,
+    notes: asString(data.description) || "",
+  };
+}
+
+function parseIngredients(
+  raw: unknown
+): { quantity: string; unit: string; item: string }[] {
+  if (!Array.isArray(raw)) return [];
+  return raw.filter((s) => typeof s === "string").map(parseIngredientString);
+}
+
+function parseIngredientString(s: string): {
+  quantity: string;
+  unit: string;
+  item: string;
+} {
+  // Match patterns like "2 cups flour", "1/2 tsp salt", "3 large eggs"
+  const match = s.match(
+    /^([\d\s/½⅓⅔¼¾⅛.,-]+)?\s*(cups?|tbsp|tsp|tablespoons?|teaspoons?|oz|ounces?|lbs?|pounds?|g|kg|ml|l|liters?|quarts?|pints?|gallons?|cloves?|stalks?|cans?|packages?|slices?|pieces?|sticks?|heads?|bunche?s?|large|medium|small|whole|pinch(?:es)?)?\s*(?:of\s+)?(.+)/i
+  );
+
+  if (match) {
+    return {
+      quantity: (match[1] || "").trim(),
+      unit: (match[2] || "").trim(),
+      item: (match[3] || s).trim(),
+    };
+  }
+
+  return { quantity: "", unit: "", item: s.trim() };
+}
+
+function parseInstructions(raw: unknown): string[] {
+  if (!raw) return [];
+  if (Array.isArray(raw)) {
+    return raw.flatMap((item) => {
+      if (typeof item === "string") return [item];
+      if (item && typeof item === "object") {
+        const obj = item as Record<string, unknown>;
+        // HowToStep
+        if (typeof obj.text === "string") return [obj.text];
+        // HowToSection with itemListElement
+        if (Array.isArray(obj.itemListElement)) {
+          return obj.itemListElement
+            .map((sub: unknown) => {
+              if (sub && typeof sub === "object") {
+                return (sub as Record<string, unknown>).text;
+              }
+              return null;
+            })
+            .filter((t): t is string => typeof t === "string");
+        }
+      }
+      return [];
+    });
+  }
+  return [];
+}
+
+function parseDuration(raw: unknown): string {
+  if (typeof raw !== "string") return "";
+  // ISO 8601 duration: PT1H30M, PT45M, PT2H
+  const match = raw.match(/^PT(?:(\d+)H)?(?:(\d+)M)?(?:(\d+)S)?$/i);
+  if (!match) return raw;
+
+  const hours = parseInt(match[1] || "0");
+  const minutes = parseInt(match[2] || "0");
+
+  if (hours && minutes) return `${hours} hr ${minutes} min`;
+  if (hours) return `${hours} hr`;
+  if (minutes) return `${minutes} min`;
+  return "";
+}
+
+function parseServings(raw: unknown): string {
+  if (typeof raw === "string") return raw;
+  if (typeof raw === "number") return `${raw} servings`;
+  if (Array.isArray(raw) && raw.length > 0) return String(raw[0]);
+  return "";
+}
+
+function asString(val: unknown): string {
+  return typeof val === "string" ? val.trim() : "";
+}
+
+function findRecipeObjects(data: unknown): unknown[] {
+  if (Array.isArray(data)) {
+    return data.flatMap(findRecipeObjects);
+  }
+  if (data && typeof data === "object") {
+    const obj = data as Record<string, unknown>;
+    if (
+      obj["@type"] === "Recipe" ||
+      (Array.isArray(obj["@type"]) &&
+        (obj["@type"] as string[]).includes("Recipe"))
+    ) {
+      return [obj];
+    }
+    if (obj["@graph"] && Array.isArray(obj["@graph"])) {
+      return (obj["@graph"] as unknown[]).flatMap(findRecipeObjects);
+    }
+  }
+  return [];
+}
+
+function truncateContent(text: string, maxChars = 6000): string {
+  if (text.length <= maxChars) return text;
+  return text.slice(0, maxChars) + "\n[content truncated]";
+}
