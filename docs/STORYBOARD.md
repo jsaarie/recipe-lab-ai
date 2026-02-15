@@ -303,10 +303,10 @@
 **Elements:**
 | # | Element | Description | Status |
 |---|---------|-------------|--------|
-| 1 | Status label | "Recipe ready!" — small, muted green text | NOT BUILT |
-| 2 | Recipe title | Bold, truncated if long | NOT BUILT |
-| 3 | Quick meta | Step count + total time as inline text | NOT BUILT |
-| 4 | CTA button | "Enter the Lab" — full-width, large, brand green | NOT BUILT |
+| 1 | Status label | "Recipe ready!" — small, muted green text | Built |
+| 2 | Recipe title | Bold, truncated if long | Built |
+| 3 | Quick meta | Step count + total time as inline text | Built |
+| 4 | CTA button | "Enter the Lab" — full-width, large, brand green | Built |
 
 **User Action:** Click "Enter the Lab" to switch to the Lab HUD (-> S6a)
 
@@ -372,13 +372,13 @@
 **Elements:**
 | # | Element | Description | Status |
 |---|---------|-------------|--------|
-| 1 | Exit Lab link | "< Exit Lab" — returns to S4 recipe view | NOT BUILT |
-| 2 | Lab title | "The Lab" — centered header text | NOT BUILT |
-| 3 | Progress map | Horizontal step indicators with current highlighted | NOT BUILT |
-| 4 | Step label | "STEP N of M" — uppercase, small, muted | NOT BUILT |
-| 5 | Step instruction | Full instruction text, large and readable | NOT BUILT |
-| 6 | On Deck preview | Next step shown in muted style | NOT BUILT |
-| 7 | Action button | "Done — Next Step" — fixed bottom, full-width | NOT BUILT |
+| 1 | Exit Lab link | "< Exit Lab" — returns to S4 recipe view | Built |
+| 2 | Lab title | Recipe title — centered header text | Built |
+| 3 | Progress map | Dot indicators with current highlighted | Built |
+| 4 | Step label | "STEP N of M" — uppercase, small, muted | Built |
+| 5 | Step instruction | Full instruction text, large and readable, centered | Built |
+| 6 | On Deck preview | Faded card with next step preview | Built |
+| 7 | Action button | "Done — Next Step" — fixed bottom mobile, inline desktop | Built |
 
 **User Actions:**
 - Tap "Done — Next Step" to complete current step and advance (-> S6b transition)
@@ -419,7 +419,7 @@
 
 **Timing:** Transition should be quick (~200-300ms) — this is a kitchen app, not a presentation
 
-**Status:** NOT BUILT
+**Status:** Built
 
 ---
 
@@ -451,17 +451,17 @@
 **Elements:**
 | # | Element | Description | Status |
 |---|---------|-------------|--------|
-| 1 | Celebration text | "You did it!" — large, bold, brand green | NOT BUILT |
-| 2 | Recipe title | Name of the completed recipe | NOT BUILT |
-| 3 | Step count | "N steps completed" — muted subtext | NOT BUILT |
-| 4 | View Recipe button | Returns to S4 (recipe view) — outline style | NOT BUILT |
-| 5 | Cook Another button | Returns to S1 (hero/landing) — brand green | NOT BUILT |
+| 1 | Celebration text | "You did it!" — large, bold, brand green | Built |
+| 2 | Recipe title | Name of the completed recipe | Built |
+| 3 | Step count | "N steps completed" — muted subtext | Built |
+| 4 | View Recipe button | Returns to S4 (recipe view) — outline style | Built |
+| 5 | Cook Another button | Returns to S1 (hero/landing) — brand green | Built |
 
 **User Actions:**
 - "View Full Recipe" -> S4 (recipe view with banner)
 - "Cook Another" -> S1 (landing page, clears current recipe)
 
-**Status:** NOT BUILT
+**Status:** Built
 
 ---
 
@@ -543,9 +543,9 @@ USER ARRIVES
 | S4 | Recipe View | v0.1 | Result displayed (updated with Lab banner) | YES |
 | S4a | Ingredient Check | v0.1 | Interactive toggle | YES |
 | S5 | New Search | v0.1 | Compact header input | YES |
-| S6 | Lab Entry Banner | v0.2 | Confirmation before Lab | NOT BUILT |
-| S6a | Lab HUD — Active Step | v0.2 | Guided cooking step view | NOT BUILT |
-| S6b | Step Transition | v0.2 | Animation between steps | NOT BUILT |
-| S6c | Recipe Complete | v0.2 | Celebration / end state | NOT BUILT |
+| S6 | Lab Entry Banner | v0.2 | Confirmation before Lab | YES |
+| S6a | Lab HUD — Active Step | v0.2 | Guided cooking step view | YES |
+| S6b | Step Transition | v0.2 | Animation between steps | YES |
+| S6c | Recipe Complete | v0.2 | Celebration / end state | YES |
 
-**Total screens: 11 (5 fully built, 1 partial, 1 sub-state, 4 not built)**
+**Total screens: 11 (9 fully built, 1 partial, 1 sub-state)**
