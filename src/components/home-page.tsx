@@ -1,26 +1,86 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useCallback } from "react";
 import { RecipeInput } from "@/components/recipe-input";
 import { RecipeCard } from "@/components/recipe-card";
+import { LabBanner } from "@/components/lab-banner";
+import { LabView } from "@/components/lab-view";
+import { LabComplete } from "@/components/lab-complete";
 import type { ParsedRecipe } from "@/types/recipe";
+
+type View = "recipe" | "lab" | "complete";
 
 export function HomePage() {
   const [recipe, setRecipe] = useState<ParsedRecipe | null>(null);
+  const [recipeSource, setRecipeSource] = useState<"structured" | "ai">("structured");
   const [loading, setLoading] = useState(false);
+  const [view, setView] = useState<View>("recipe");
+  const [labStep, setLabStep] = useState(0);
 
   const hasRecipe = recipe !== null;
+
+  const handleRecipeParsed = useCallback((r: ParsedRecipe, s: "structured" | "ai") => {
+    setRecipe(r);
+    setRecipeSource(s);
+    setView("recipe");
+    setLabStep(0);
+  }, []);
+
+  const handleEnterLab = useCallback(() => {
+    setView("lab");
+  }, []);
+
+  const handleExitLab = useCallback(() => {
+    setView("recipe");
+  }, []);
+
+  const handleLabComplete = useCallback(() => {
+    setView("complete");
+  }, []);
+
+  const handleViewRecipe = useCallback(() => {
+    setView("recipe");
+  }, []);
+
+  const handleCookAnother = useCallback(() => {
+    setRecipe(null);
+    setView("recipe");
+    setLabStep(0);
+  }, []);
+
+  // Lab HUD — full-screen, replaces everything
+  if (hasRecipe && view === "lab") {
+    return (
+      <LabView
+        recipe={recipe}
+        initialStep={labStep}
+        onExitLab={handleExitLab}
+        onComplete={handleLabComplete}
+      />
+    );
+  }
+
+  // Recipe Complete — full-screen celebration
+  if (hasRecipe && view === "complete") {
+    return (
+      <LabComplete
+        recipe={recipe}
+        onViewRecipe={handleViewRecipe}
+        onCookAnother={handleCookAnother}
+      />
+    );
+  }
 
   return (
     <div className="flex min-h-screen flex-col items-center bg-[#FAF8F5] px-4">
       {/* Hero state: centered */}
       {!hasRecipe && !loading && (
-        <div className="flex flex-1 flex-col items-center justify-center gap-8">
+        <div className="flex w-full max-w-3xl flex-1 flex-col items-center justify-center gap-8">
           <h1 className="text-3xl font-bold tracking-tight text-neutral-700 sm:text-5xl">
             Recipe Lab <span className="text-[#7C9070]">AI</span>
           </h1>
           <RecipeInput
-            onRecipeParsed={setRecipe}
+            onRecipeParsed={handleRecipeParsed}
             onLoading={setLoading}
           />
         </div>
@@ -57,8 +117,8 @@ export function HomePage() {
         </div>
       )}
 
-      {/* Recipe state: compact input at top, recipe below */}
-      {hasRecipe && !loading && (
+      {/* Recipe state: compact input at top, banner, recipe below */}
+      {hasRecipe && !loading && view === "recipe" && (
         <>
           <header className="sticky top-0 z-10 w-full border-b border-neutral-200 bg-[#FAF8F5]/95 px-3 py-3 backdrop-blur-sm">
             <div className="mx-auto flex max-w-2xl flex-col items-center gap-2 sm:flex-row sm:gap-4">
@@ -67,13 +127,14 @@ export function HomePage() {
               </span>
               <RecipeInput
                 compact
-                onRecipeParsed={setRecipe}
+                onRecipeParsed={handleRecipeParsed}
                 onLoading={setLoading}
               />
             </div>
           </header>
-          <main className="w-full max-w-2xl px-1 py-6 sm:py-10">
-            <RecipeCard recipe={recipe} />
+          <main className="w-full max-w-2xl px-1 py-6 sm:py-10 space-y-6">
+            <LabBanner recipe={recipe} onEnterLab={handleEnterLab} />
+            <RecipeCard recipe={recipe} source={recipeSource} />
           </main>
         </>
       )}
