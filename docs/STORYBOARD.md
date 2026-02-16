@@ -505,13 +505,13 @@ MOBILE LAB HUD — TAP ZONES & SWIPE
 **Elements:**
 | # | Element | Description | Status |
 |---|---------|-------------|--------|
-| 1 | Left tap zone | Invisible, left 40% of content area | NOT BUILT |
-| 2 | Right tap zone | Invisible, right 40% of content area | NOT BUILT |
-| 3 | Swipe handler | Touch event listener for horizontal swipes | NOT BUILT |
-| 4 | Left edge arrow | ‹ chevron, fades after 3s, hidden on step 1 | NOT BUILT |
-| 5 | Right edge arrow | › chevron, fades after 3s, hidden on last step | NOT BUILT |
+| 1 | Left tap zone | Invisible, left 40% of content area | Built |
+| 2 | Right tap zone | Invisible, right 40% of content area | Built |
+| 3 | Swipe handler | Touch event listener for horizontal swipes | Built |
+| 4 | Left edge arrow | ‹ chevron, fades after 3s, hidden on step 1 | Built |
+| 5 | Right edge arrow | › chevron, fades after 3s, hidden on last step | Built |
 
-**Status:** NOT BUILT
+**Status:** Built
 
 ---
 
@@ -663,8 +663,8 @@ USER ARRIVES
 | S5 | New Search | v0.1 | Compact header input | YES |
 | S6 | Lab Entry Banner | v0.2 | Confirmation before Lab | YES |
 | S6a | Lab HUD — Active Step | v0.2 | Guided cooking step view | YES |
-| S6a-m | Dirty-Hands Nav | v0.2 | Swipe + tap zones, edge arrows (mobile) | NOT BUILT |
+| S6a-m | Dirty-Hands Nav | v0.2 | Swipe + tap zones, edge arrows (mobile) | YES |
 | S6b | Step Transition | v0.2 | Animation between steps | YES |
 | S6c | Recipe Complete | v0.2 | Celebration / end state | YES |
 
-**Total screens: 12 (9 fully built, 1 partial, 1 sub-state, 1 not built)**
+**Total screens: 12 (10 fully built, 1 partial, 1 sub-state)**

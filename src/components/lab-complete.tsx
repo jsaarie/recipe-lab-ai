@@ -18,7 +18,7 @@ export function LabComplete({ recipe, onViewRecipe, onCookAnother }: LabComplete
       <div className="w-full max-w-sm text-center space-y-6">
         <div className="space-y-2">
           <h1 className="text-3xl font-bold text-[#7C9070]">
-            You did it!
+            Enjoy!
           </h1>
           <p className="text-lg font-semibold text-neutral-700">
             {recipe.title}
@@ -31,18 +31,10 @@ export function LabComplete({ recipe, onViewRecipe, onCookAnother }: LabComplete
         <div className="space-y-3 pt-4">
           <Button
             onClick={onViewRecipe}
-            variant="outline"
-            className="h-12 w-full rounded-full border-neutral-300 text-base font-semibold text-neutral-700 hover:bg-neutral-50"
+            className="h-12 w-full rounded-full bg-[#7C9070] text-base font-semibold text-white shadow-sm hover:bg-[#6B7F60]"
           >
             <BookOpen className="size-5" />
             View Full Recipe
-          </Button>
-          <Button
-            onClick={onCookAnother}
-            className="h-12 w-full rounded-full bg-[#7C9070] text-base font-semibold text-white shadow-sm hover:bg-[#6B7F60]"
-          >
-            <ChefHat className="size-5" />
-            Cook Another
           </Button>
         </div>
       </div>

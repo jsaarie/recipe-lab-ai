@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
-import { FlaskConical } from "lucide-react";
+import { ChefHat } from "lucide-react";
 import type { ParsedRecipe } from "@/types/recipe";
 
 interface LabBannerProps {
@@ -44,8 +44,8 @@ export function LabBanner({ recipe, onEnterLab }: LabBannerProps) {
           onClick={onEnterLab}
           className="h-12 w-full rounded-full bg-[#7C9070] text-base font-semibold text-white shadow-sm hover:bg-[#6B7F60]"
         >
-          <FlaskConical className="size-5" />
-          Enter the Lab
+          <ChefHat className="size-5" />
+          Cook
         </Button>
       </div>
     </div>

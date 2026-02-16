@@ -9,7 +9,8 @@
     "build:staging": "cp .env.staging .env.local && next build",
     "start": "next start",
     "start:staging": "next start --port 3001",
-    "lint": "eslint"
+    "lint": "eslint",
+    "deploy:staging": "vercel --yes | tail -1 | xargs -I {} vercel alias {} recipe-lab-staging.vercel.app"
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^0.74.0",

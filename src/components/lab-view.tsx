@@ -12,36 +12,23 @@ interface LabViewProps {
   onComplete: () => void;
 }
 
-function ProgressDots({
+function ProgressBar({
   total,
   current,
-  onJump,
 }: {
   total: number;
   current: number;
-  onJump: (step: number) => void;
 }) {
-  return (
-    <div className="flex items-center justify-center gap-2 px-4 py-3 overflow-x-auto">
-      {Array.from({ length: total }, (_, i) => {
-        const isCompleted = i < current;
-        const isCurrent = i === current;
+  const percent = total <= 1 ? 100 : ((current) / (total - 1)) * 100;
 
-        return (
-          <button
-            key={i}
-            onClick={() => onJump(i)}
-            className={`shrink-0 rounded-full transition-all duration-300 ${
-              isCurrent
-                ? "h-4 w-4 scale-125 bg-[#7C9070]/20 ring-2 ring-[#7C9070]"
-                : isCompleted
-                  ? "h-3 w-3 bg-[#7C9070]"
-                  : "h-3 w-3 border-2 border-neutral-300 bg-transparent"
-            }`}
-            aria-label={`Step ${i + 1}${isCurrent ? " (current)" : isCompleted ? " (completed)" : ""}`}
-          />
-        );
-      })}
+  return (
+    <div className="px-4 py-3">
+      <div className="h-1.5 w-full rounded-full bg-neutral-200">
+        <div
+          className="h-full rounded-full bg-[#7C9070] transition-all duration-500 ease-out"
+          style={{ width: `${percent}%` }}
+        />
+      </div>
     </div>
   );
 }
@@ -130,17 +117,6 @@ export function LabView({ recipe, initialStep = 0, onExitLab, onComplete }: LabV
     }, 200);
   }, [isFirstStep]);
 
-  const jumpToStep = useCallback((step: number) => {
-    if (step === currentStep) return;
-    const goingForward = step > currentStep;
-    setSlideDirection(goingForward ? "out-left" : "out-right");
-    setTimeout(() => {
-      setCurrentStep(step);
-      setSlideDirection(goingForward ? "in-right" : "in-left");
-      setTimeout(() => setSlideDirection(null), 300);
-    }, 200);
-  }, [currentStep]);
-
   const swipe = useSwipe(advanceStep, goBackStep);
 
   const handleTapZone = useCallback(
@@ -185,24 +161,17 @@ export function LabView({ recipe, initialStep = 0, onExitLab, onComplete }: LabV
         <div className="mx-auto flex max-w-2xl items-center">
           <button
             onClick={onExitLab}
-            className="flex items-center gap-1 text-sm text-neutral-500 hover:text-neutral-700 transition-colors"
+            className="flex items-center text-neutral-500 hover:text-neutral-700 transition-colors"
+            aria-label="Exit Lab"
           >
-            <ArrowLeft className="size-4" />
-            Exit Lab
+            <ArrowLeft className="size-5" />
           </button>
           <h1 className="flex-1 truncate text-center text-sm font-semibold text-neutral-700 px-4">
             {recipe.title}
           </h1>
-          <div className="w-16" />
+          <div className="w-5" />
         </div>
       </header>
-
-      {/* Progress Dots */}
-      <div className="border-b border-neutral-100">
-        <div className="mx-auto max-w-2xl">
-          <ProgressDots total={totalSteps} current={currentStep} onJump={jumpToStep} />
-        </div>
-      </div>
 
       {/* Main Content Area — swipe + tap zones */}
       <div
@@ -231,19 +200,22 @@ export function LabView({ recipe, initialStep = 0, onExitLab, onComplete }: LabV
           </div>
         )}
 
-        <div className="mx-auto w-full max-w-2xl flex-1 flex flex-col justify-center py-8 sm:py-12">
-          {/* Step Label */}
-          <p className="mb-4 text-center text-xs font-semibold uppercase tracking-widest text-neutral-400">
-            Step {currentStep + 1} of {totalSteps}
-          </p>
-
+        <div className="mx-auto w-full max-w-2xl flex-1 flex flex-col pt-6 sm:pt-10">
           {/* Active Step Instruction */}
           <div
             className={`transition-all duration-200 ease-out ${getSlideClass()}`}
           >
-            <p className="text-center text-lg leading-relaxed text-neutral-800 sm:text-xl sm:leading-relaxed">
+            <p className="text-left text-lg leading-relaxed text-neutral-800 sm:text-xl sm:leading-relaxed">
               {steps[currentStep]}
             </p>
+          </div>
+
+          {/* Progress Bar + Step Label */}
+          <div className="mt-3 w-full max-w-xs">
+            <p className="px-4 mb-1 text-right text-[10px] font-medium tracking-wide text-neutral-400">
+              Step {currentStep + 1} of {totalSteps}
+            </p>
+            <ProgressBar total={totalSteps} current={currentStep} />
           </div>
 
           {/* On Deck */}
