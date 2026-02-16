@@ -66,7 +66,7 @@ export async function scrapeRecipePage(url: string): Promise<ScrapeResult> {
   for (const selector of selectors) {
     const el = $(selector).first();
     if (el.length) {
-      const text = el.text().replace(/\s+/g, " ").trim();
+      const text = cleanText(el.text());
       if (text.length > 200) {
         return { type: "raw", content: truncateContent(text) };
       }
@@ -74,7 +74,7 @@ export async function scrapeRecipePage(url: string): Promise<ScrapeResult> {
   }
 
   // Last resort: body text
-  const bodyText = $("body").text().replace(/\s+/g, " ").trim();
+  const bodyText = cleanText($("body").text());
   return { type: "raw", content: truncateContent(bodyText) };
 }
 
@@ -108,7 +108,7 @@ function parseIngredients(
   raw: unknown
 ): { quantity: string; unit: string; item: string }[] {
   if (!Array.isArray(raw)) return [];
-  return raw.filter((s) => typeof s === "string").map(parseIngredientString);
+  return raw.filter((s) => typeof s === "string").map((s) => parseIngredientString(cleanText(s)));
 }
 
 function parseIngredientString(s: string): {
@@ -136,11 +136,11 @@ function parseInstructions(raw: unknown): string[] {
   if (!raw) return [];
   if (Array.isArray(raw)) {
     return raw.flatMap((item) => {
-      if (typeof item === "string") return [item];
+      if (typeof item === "string") return [cleanText(item)];
       if (item && typeof item === "object") {
         const obj = item as Record<string, unknown>;
         // HowToStep
-        if (typeof obj.text === "string") return [obj.text];
+        if (typeof obj.text === "string") return [cleanText(obj.text)];
         // HowToSection with itemListElement
         if (Array.isArray(obj.itemListElement)) {
           return obj.itemListElement
@@ -182,7 +182,7 @@ function parseServings(raw: unknown): string {
 }
 
 function asString(val: unknown): string {
-  return typeof val === "string" ? val.trim() : "";
+  return typeof val === "string" ? cleanText(val) : "";
 }
 
 function findRecipeObjects(data: unknown): unknown[] {
@@ -203,6 +203,16 @@ function findRecipeObjects(data: unknown): unknown[] {
     }
   }
   return [];
+}
+
+/** Replace non-breaking spaces, zero-width chars, HTML entities, and collapse whitespace */
+function cleanText(text: string): string {
+  return text
+    .replace(/&nbsp;/gi, " ")
+    .replace(/&#160;/g, " ")
+    .replace(/[\u00a0\u200b\u200c\u200d\ufeff]/g, " ")
+    .replace(/\s+/g, " ")
+    .trim();
 }
 
 function truncateContent(text: string, maxChars = 6000): string {

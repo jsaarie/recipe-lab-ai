@@ -133,8 +133,11 @@ export function HomePage() {
             </div>
           </header>
           <main className="w-full max-w-2xl px-1 py-6 sm:py-10 space-y-6">
-            <LabBanner recipe={recipe} onEnterLab={handleEnterLab} />
-            <RecipeCard recipe={recipe} source={recipeSource} />
+            <RecipeCard
+              recipe={recipe}
+              source={recipeSource}
+              afterTitle={<LabBanner recipe={recipe} onEnterLab={handleEnterLab} />}
+            />
           </main>
         </>
       )}

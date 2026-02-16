@@ -1,9 +1,12 @@
 "use client";
 
-import { useState, useCallback, useRef, useEffect } from "react";
+import { useState, useCallback, useRef, useEffect, useMemo } from "react";
 import { Button } from "@/components/ui/button";
 import { ArrowLeft, ChevronLeft, ChevronRight } from "lucide-react";
 import type { ParsedRecipe } from "@/types/recipe";
+import { detectTimer, formatTime } from "@/lib/timer-utils";
+import { StepTimer, type TimerState } from "@/components/step-timer";
+import { TimerToast } from "@/components/timer-toast";
 
 interface LabViewProps {
   recipe: ParsedRecipe;
@@ -77,6 +80,79 @@ export function LabView({ recipe, initialStep = 0, onExitLab, onComplete }: LabV
   const totalSteps = steps.length;
   const isFirstStep = currentStep === 0;
   const isLastStep = currentStep === totalSteps - 1;
+
+  // Detect timers for all steps (memoized)
+  const detectedTimers = useMemo(
+    () => steps.map((step) => detectTimer(step)),
+    [steps]
+  );
+
+  // Timer state: Map of stepIndex → TimerState
+  const [timers, setTimers] = useState<Map<number, TimerState>>(new Map());
+  const [toastMessage, setToastMessage] = useState<string | null>(null);
+
+  // Single interval to tick all running timers
+  useEffect(() => {
+    const interval = setInterval(() => {
+      setTimers((prev) => {
+        let changed = false;
+        const next = new Map(prev);
+        for (const [step, state] of next) {
+          if (state.status === "running" && state.remaining > 0) {
+            changed = true;
+            const newRemaining = state.remaining - 1;
+            if (newRemaining <= 0) {
+              next.set(step, { ...state, remaining: 0, status: "finished" });
+              setToastMessage(`Step ${step + 1} timer done!`);
+            } else {
+              next.set(step, { ...state, remaining: newRemaining });
+            }
+          }
+        }
+        return changed ? next : prev;
+      });
+    }, 1000);
+    return () => clearInterval(interval);
+  }, []);
+
+  const handleStartTimer = useCallback((stepIndex: number) => {
+    const detected = detectedTimers[stepIndex];
+    if (!detected) return;
+    setTimers((prev) => {
+      const next = new Map(prev);
+      next.set(stepIndex, {
+        status: "running",
+        remaining: detected.durationSeconds,
+        total: detected.durationSeconds,
+      });
+      return next;
+    });
+  }, [detectedTimers]);
+
+  const handleTogglePause = useCallback((stepIndex: number) => {
+    setTimers((prev) => {
+      const state = prev.get(stepIndex);
+      if (!state) return prev;
+      const next = new Map(prev);
+      next.set(stepIndex, {
+        ...state,
+        status: state.status === "running" ? "paused" : "running",
+      });
+      return next;
+    });
+  }, []);
+
+  // Background timers: running/paused on steps other than current
+  const backgroundTimers = useMemo(() => {
+    const result: { step: number; state: TimerState }[] = [];
+    for (const [step, state] of timers) {
+      if (step !== currentStep && (state.status === "running" || state.status === "paused")) {
+        result.push({ step, state });
+      }
+    }
+    result.sort((a, b) => a.step - b.step);
+    return result;
+  }, [timers, currentStep]);
 
   // Fade arrows after 3 seconds, reset on step change
   const resetArrowTimer = useCallback(() => {
@@ -156,6 +232,14 @@ export function LabView({ recipe, initialStep = 0, onExitLab, onComplete }: LabV
 
   return (
     <div className="flex min-h-screen flex-col bg-[#FAF8F5]">
+      {/* Timer Toast */}
+      {toastMessage && (
+        <TimerToast
+          message={toastMessage}
+          onDismiss={() => setToastMessage(null)}
+        />
+      )}
+
       {/* Lab Header */}
       <header className="sticky top-0 z-10 border-b border-neutral-200 bg-[#FAF8F5]/95 px-4 py-3 backdrop-blur-sm">
         <div className="mx-auto flex max-w-2xl items-center">
@@ -201,6 +285,14 @@ export function LabView({ recipe, initialStep = 0, onExitLab, onComplete }: LabV
         )}
 
         <div className="mx-auto w-full max-w-2xl flex-1 flex flex-col pt-6 sm:pt-10">
+          {/* Progress Bar + Step Label */}
+          <div className="mb-4 w-full max-w-xs">
+            <p className="px-4 mb-1 text-left text-[10px] font-medium tracking-wide text-neutral-400">
+              Step {currentStep + 1} of {totalSteps}
+            </p>
+            <ProgressBar total={totalSteps} current={currentStep} />
+          </div>
+
           {/* Active Step Instruction */}
           <div
             className={`transition-all duration-200 ease-out ${getSlideClass()}`}
@@ -208,30 +300,39 @@ export function LabView({ recipe, initialStep = 0, onExitLab, onComplete }: LabV
             <p className="text-left text-lg leading-relaxed text-neutral-800 sm:text-xl sm:leading-relaxed">
               {steps[currentStep]}
             </p>
-          </div>
 
-          {/* Progress Bar + Step Label */}
-          <div className="mt-3 w-full max-w-xs">
-            <p className="px-4 mb-1 text-right text-[10px] font-medium tracking-wide text-neutral-400">
-              Step {currentStep + 1} of {totalSteps}
-            </p>
-            <ProgressBar total={totalSteps} current={currentStep} />
-          </div>
-
-          {/* On Deck */}
-          {!isLastStep && (
-            <>
-              <hr className="my-6 border-neutral-200 sm:my-8" />
-              <div className="rounded-lg bg-neutral-50 px-4 py-4 sm:px-5">
-                <p className="mb-2 text-xs font-semibold uppercase tracking-widest text-neutral-400">
-                  On Deck — Step {currentStep + 2}
-                </p>
-                <p className="text-sm leading-relaxed text-neutral-400">
-                  {steps[currentStep + 1]}
-                </p>
+            {/* Background Timers */}
+            {backgroundTimers.length > 0 && (
+              <div className="mt-4 flex flex-wrap gap-2">
+                {backgroundTimers.map(({ step, state }) => (
+                  <button
+                    key={step}
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      setCurrentStep(step);
+                    }}
+                    className={`flex items-center gap-1.5 rounded-full px-3 py-1.5 text-xs font-medium transition-colors ${
+                      state.status === "running"
+                        ? "bg-[#7C9070]/10 text-[#7C9070] animate-pulse"
+                        : "bg-neutral-100 text-neutral-500"
+                    }`}
+                  >
+                    Step {step + 1} · {formatTime(state.remaining)}
+                  </button>
+                ))}
               </div>
-            </>
-          )}
+            )}
+
+            {/* Step Timer */}
+            {detectedTimers[currentStep] && (
+              <StepTimer
+                detected={detectedTimers[currentStep]}
+                timerState={timers.get(currentStep)}
+                onStart={() => handleStartTimer(currentStep)}
+                onTogglePause={() => handleTogglePause(currentStep)}
+              />
+            )}
+          </div>
 
           {/* Inline action button for desktop only */}
           <div className="mt-8 hidden sm:block">

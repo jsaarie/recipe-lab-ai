@@ -30,12 +30,6 @@ export function LabBanner({ recipe, onEnterLab }: LabBannerProps) {
       }`}
     >
       <div className="rounded-xl border border-[#7C9070]/20 bg-[#7C9070]/5 px-5 py-5 sm:px-6 sm:py-6">
-        <p className="mb-1 text-sm font-medium text-[#7C9070]">
-          Recipe ready!
-        </p>
-        <h3 className="mb-1 truncate text-lg font-bold text-neutral-800">
-          {recipe.title}
-        </h3>
         <p className="mb-4 text-sm text-neutral-500">
           {stepCount} {stepCount === 1 ? "step" : "steps"}
           {totalTime ? ` · ${totalTime} total` : ""}

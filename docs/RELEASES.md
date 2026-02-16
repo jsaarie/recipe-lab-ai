@@ -17,7 +17,6 @@ This document tracks each production deployment, including the version, release 
   - Progress dot indicators (filled = completed, ring = current, hollow = upcoming)
   - Tappable dots to jump between steps
   - Centered current step instruction with "STEP N of M" label
-  - "On Deck" faded card previewing the next step
   - Slide left/right transitions between steps (~200ms)
   - "Done — Next Step" action button (fixed bottom bar on mobile, inline on desktop)
   - Last step changes button to "Finish Recipe" and hides On Deck
@@ -27,9 +26,8 @@ This document tracks each production deployment, including the version, release 
   - Subtle edge arrow hints that fade after 3 seconds, reappear on step change
   - Haptic feedback on swipe (navigator.vibrate)
   - Fixed bottom button removed on mobile; inline button retained on desktop
-- Recipe Complete celebration screen with "You did it!", step count summary, and two actions:
+- Recipe Complete celebration screen with "Enjoy!", step count summary, and two actions:
   - "View Full Recipe" returns to recipe view
-  - "Cook Another" resets to landing page
 - View state management preserving step position when flipping between Lab and recipe view
 
 ---

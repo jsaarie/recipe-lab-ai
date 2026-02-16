@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, type ReactNode } from "react";
 import type { ParsedRecipe } from "@/types/recipe";
 
 function MetaPill({ label, value }: { label: string; value: string }) {
@@ -37,7 +37,7 @@ function formatIngredient(ing: { quantity: string; unit: string; item: string })
   return [ing.quantity, ing.unit, ing.item].filter(Boolean).join(" ");
 }
 
-export function RecipeCard({ recipe, source }: { recipe: ParsedRecipe; source?: "structured" | "ai" }) {
+export function RecipeCard({ recipe, source, afterTitle }: { recipe: ParsedRecipe; source?: "structured" | "ai"; afterTitle?: ReactNode }) {
   return (
     <div className="w-full max-w-2xl space-y-5 sm:space-y-8">
       {/* Title */}
@@ -67,6 +67,8 @@ export function RecipeCard({ recipe, source }: { recipe: ParsedRecipe; source?: 
           )}
         </div>
       </div>
+
+      {afterTitle}
 
       {/* Meta Pills */}
       <div className="flex flex-wrap justify-center gap-1.5 sm:gap-2">

@@ -146,3 +146,183 @@ Provider is selected via environment variable `AI_PROVIDER=claude|openai`.
 - **Mobile-first**: Fully responsive, optimized for phone use in a kitchen
 - **Accessibility**: Semantic HTML, proper heading hierarchy, sufficient contrast
 - **SEO**: Not a priority for MVP (single-page app, no public recipe pages)
+
+---
+
+## Feature: Smart Ingredients (v0.4)
+
+### Overview
+
+Per-step ingredient display inside the Lab HUD. As the user advances through cooking steps, only the ingredients relevant to the current step are shown — with split quantities when an ingredient is used across multiple steps. Ingredients are checkable so users can track what they've prepped.
+
+---
+
+### Design Decisions
+
+| Decision | Choice |
+|----------|--------|
+| Placement | Per-step, inline below the instruction text |
+| Ingredient-to-step mapping | AI extraction (at parse time) |
+| Checkable | Yes — tap to mark as used, state persists across steps |
+| Quantity handling | AI splits amounts per step (e.g. "1 of 2 cups flour") |
+| Empty steps | Hide ingredients section entirely (e.g. "Preheat oven") |
+
+---
+
+### Data Model
+
+The `ParsedRecipe` type is extended with a `stepIngredients` field — an array parallel to `instructions`, where each entry contains the ingredients used in that step with split quantities.
+
+```typescript
+interface ParsedRecipe {
+  // ... existing fields ...
+  stepIngredients: {
+    quantity: string;
+    unit: string;
+    item: string;
+  }[][];
+  // stepIngredients[0] = ingredients for instructions[0]
+  // stepIngredients[3] = [] means step 4 uses no ingredients
+}
+```
+
+---
+
+### AI Extraction
+
+The extraction prompt is extended (single AI call, not a second pass) to also return `stepIngredients`. The AI:
+
+1. Parses the full ingredient list as before
+2. Maps each ingredient to the step(s) where it is used
+3. Splits quantities when an ingredient appears in multiple steps
+4. Returns `stepIngredients` as a parallel array to `instructions`
+
+---
+
+### Lab HUD Integration
+
+#### Per-step ingredient list
+
+Below the instruction text on each step, a list of ingredients appears:
+
+```
+┌─────────────────────────────────┐
+│  Combine flour and baking soda  │  ← instruction
+│  in a large bowl.               │
+│                                 │
+│  ☐ 1½ cups all-purpose flour    │  ← checkable ingredients
+│  ☐ 1 tsp baking soda           │
+│                                 │
+│  Step 2 of 8                    │  ← step label
+│  ████████░░░░░░░░░░░░░░░░░░░░  │  ← progress bar
+└─────────────────────────────────┘
+```
+
+- Ingredients are shown as checkable rows (tap to toggle)
+- Checked state persists when navigating between steps
+- On steps with no ingredients, the section is hidden entirely
+
+---
+
+## Feature: Step Timers (v0.3)
+
+### Overview
+
+Auto-detected countdown timers inside the Lab HUD. When a step mentions a duration (e.g. "bake for 25 minutes"), a timer widget appears below the instruction. Users tap to start the countdown and can navigate freely while timers run in the background. A toast notification with sound alerts the user when any timer finishes.
+
+---
+
+### Design Decisions
+
+| Decision | Choice |
+|----------|--------|
+| Trigger | Auto-detected from instruction text |
+| Extraction | Client-side regex (no AI cost, works with all recipes) |
+| Concurrency | Multiple timers can run simultaneously |
+| Placement | Below instruction text (below ingredients if v0.4 is active) |
+| Auto-start | No — tap to start, duration shown first |
+| Completion alert | Toast notification + sound + vibration |
+| Navigation | Free — timers keep running in background across steps |
+
+---
+
+### Timer Detection
+
+Client-side regex parses durations from each instruction string. No AI or data model changes required.
+
+**Patterns matched:**
+- `"25 minutes"`, `"1 hour"`, `"30 seconds"`
+- `"10-12 minutes"` (uses the higher bound)
+- `"1 hour and 30 minutes"`, `"1½ hours"`
+- `"about 20 min"`, `"approximately 45 mins"`
+
+**Parsing output:**
+```typescript
+interface DetectedTimer {
+  durationSeconds: number;
+  label: string; // e.g. "25 min", "1 hr 30 min"
+}
+
+// Returns null if no timer found in the text
+function detectTimer(instruction: string): DetectedTimer | null;
+```
+
+Steps with no time reference show no timer widget.
+
+---
+
+### Timer States
+
+```
+  [idle]  →  tap  →  [running]  →  reaches 0  →  [finished]
+                        ↕ tap
+                     [paused]
+```
+
+| State | Display |
+|-------|---------|
+| Idle | Shows detected duration as tappable pill (e.g. "25:00 — Tap to start") |
+| Running | Countdown with animated ring/bar, tap to pause |
+| Paused | Paused countdown, tap to resume |
+| Finished | "Done!" label, toast + sound + vibration fired |
+
+---
+
+### Lab HUD Integration
+
+#### On the current step
+
+Below the instruction text (and below Smart Ingredients if present):
+
+```
+┌─────────────────────────────────┐
+│  Bake at 350°F until golden     │  ← instruction
+│  brown, about 25 minutes.       │
+│                                 │
+│  ☐ 2 cups flour                 │  ← ingredients (v0.4)
+│  ☐ 1 tsp salt                  │
+│                                 │
+│  ⏱ 25:00 — Tap to start        │  ← timer (idle)
+│                                 │
+│  Step 4 of 8                    │
+│  ████████████░░░░░░░░░░░░░░░░  │
+└─────────────────────────────────┘
+```
+
+#### Running timer (on its step)
+
+```
+│  ⏱ 18:42  ▮▮                   │  ← timer (running, tap to pause)
+```
+
+#### Background timers (on a different step)
+
+When the user navigates away from a step with a running timer, a small floating indicator shows active timers so they're not forgotten. This appears above the progress bar area.
+
+#### Toast on completion
+
+When any timer reaches zero:
+- A toast slides in from the top with the step label (e.g. "Step 4 timer done!")
+- A chime sound plays
+- Device vibration fires (if supported)
+- Toast auto-dismisses after 5 seconds or on tap

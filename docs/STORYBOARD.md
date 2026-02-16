@@ -583,6 +583,126 @@ MOBILE LAB HUD — TAP ZONES & SWIPE
 
 ---
 
+### S6d: STEP TIMER (v0.4)
+**Purpose:** Auto-detected countdown timers for timed steps. Lets users track cook/wait times without leaving the Lab HUD.
+
+#### Idle State (timer detected, not started)
+```
++------------------------------------------+
+| [←]       Chicken Parmesan               |
+|------------------------------------------|
+|                                          |
+|  Bake at 350°F until golden              |
+|  brown, about 25 minutes.               |
+|                                          |
+|  ┌──────────────────────────┐            |
+|  │  ⏱  25:00  Tap to start │            |
+|  └──────────────────────────┘            |
+|                                          |
+|                     Step 4 of 8          |
+|  ████████████░░░░░░░░░░░░░░░░           |
+|                                          |
+|  [ Done — Next Step          › ]         |
++------------------------------------------+
+     Timer pill: rounded-full, neutral border
+     Muted text, tap to begin countdown
+```
+
+#### Running State (timer counting down)
+```
++------------------------------------------+
+| [←]       Chicken Parmesan               |
+|------------------------------------------|
+|                                          |
+|  Bake at 350°F until golden              |
+|  brown, about 25 minutes.               |
+|                                          |
+|  ┌──────────────────────────┐            |
+|  │  ⏱  18:42           ▮▮  │            |
+|  └──────────────────────────┘            |
+|                                          |
+|                     Step 4 of 8          |
+|  ████████████░░░░░░░░░░░░░░░░           |
+|                                          |
+|  [ Done — Next Step          › ]         |
++------------------------------------------+
+     Timer pill: bg-[#7C9070], white text
+     Subtle pulse animation
+     ▮▮ = pause icon, tap to pause
+```
+
+#### Paused State
+```
+|  ┌──────────────────────────┐            |
+|  │  ⏱  18:42  Paused    ▶  │            |
+|  └──────────────────────────┘            |
+     Timer pill: outlined, brand green border
+     ▶ = play icon, tap to resume
+```
+
+#### Finished State
+```
+|  ┌──────────────────────────┐            |
+|  │  ✓  Timer done!          │            |
+|  └──────────────────────────┘            |
+     Green accent bg, checkmark icon
+```
+
+#### Background Timers (viewing a different step)
+```
++------------------------------------------+
+| [←]       Chicken Parmesan               |
+|------------------------------------------|
+|                                          |
+|  Meanwhile, prepare the salad            |
+|  by tossing greens with dressing.        |
+|                                          |
+|  ┌─────────────────┐                    |
+|  │ Step 4 · 12:38  │                    |
+|  └─────────────────┘                    |
+|                                          |
+|                     Step 5 of 8          |
+|  ██████████████░░░░░░░░░░░░░░           |
++------------------------------------------+
+     Background pill: small, rounded-full
+     Running: bg-[#7C9070]/10, green text, pulse
+     Paused: bg-neutral-100, muted text
+     Tap to jump back to that step
+```
+
+#### Toast Notification (timer completes)
+```
++------------------------------------------+
+|  ┌────────────────────────────┐          |
+|  │  ⏱  Step 4 timer done!    │          |  <- fixed top, z-50
+|  └────────────────────────────┘          |
+|                                          |
+| [←]       Chicken Parmesan               |
+|------------------------------------------|
+|  (whatever step user is on)              |
++------------------------------------------+
+     Toast: bg-[#7C9070], white text, shadow-lg
+     Slides in from top, auto-dismisses 5s
+     Two-tone chime sound (Web Audio API)
+     Vibration: 200ms-100ms-200ms pattern
+     Tap to dismiss early
+```
+
+**Elements:**
+| # | Element | Description | Status |
+|---|---------|-------------|--------|
+| 1 | Timer detection | Client-side regex parsing durations from step text | Built |
+| 2 | Idle pill | Shows detected duration, "Tap to start" | Built |
+| 3 | Running pill | Countdown, pulse animation, tap to pause | Built |
+| 4 | Paused pill | Paused countdown, tap to resume | Built |
+| 5 | Finished pill | "Timer done!" with checkmark | Built |
+| 6 | Background pills | Small indicators for timers on other steps | Built |
+| 7 | Toast notification | Slide-in alert with chime + vibration | Built |
+
+**Status:** Built
+
+---
+
 ## Full User Journey Map
 
 ```
@@ -666,5 +786,6 @@ USER ARRIVES
 | S6a-m | Dirty-Hands Nav | v0.2 | Swipe + tap zones, edge arrows (mobile) | YES |
 | S6b | Step Transition | v0.2 | Animation between steps | YES |
 | S6c | Recipe Complete | v0.2 | Celebration / end state | YES |
+| S6d | Step Timer | v0.4 | Auto-detected countdown timers in HUD | YES |
 
-**Total screens: 12 (10 fully built, 1 partial, 1 sub-state)**
+**Total screens: 13 (11 fully built, 1 partial, 1 sub-state)**
