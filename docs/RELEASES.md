@@ -4,6 +4,29 @@ This document tracks each production deployment, including the version, release 
 
 ---
 
+## V0.3 — Step Timers
+
+**Date:** 2026-02-16
+
+### Features
+
+- Auto-detected countdown timers in the Lab HUD
+  - Client-side regex detects durations in instruction text (e.g. "bake for 25 minutes")
+  - Supports simple durations, ranges (uses higher bound), and compound times (e.g. "1 hour and 30 minutes")
+- Circular SVG radial progress bar with countdown text centered inside
+  - Idle: full ring with duration, "Start Timer" button below
+  - Running: arc depletes as time passes, "Pause" button below
+  - Paused: arc frozen, "Resume" button below
+  - Finished: checkmark with "Done!" inside full ring
+- Multiple concurrent timers across different steps
+- Background timer pills (sorted by step number) showing running timers on other steps, tappable to jump
+- Toast notification on timer completion with two-tone Web Audio chime and device vibration
+- Progress bar and step label moved above instruction text, label left-aligned
+- Cook button repositioned under recipe title (removed duplicate title from Lab Banner)
+- Non-breaking space and HTML entity cleanup in scraped recipe text
+
+---
+
 ## V0.2 — The Lab (Cooking HUD)
 
 **Date:** 2026-02-15
