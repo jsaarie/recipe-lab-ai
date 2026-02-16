@@ -381,7 +381,9 @@
 | 7 | Action button | "Done — Next Step" — fixed bottom mobile, inline desktop | Built |
 
 **User Actions:**
-- Tap "Done — Next Step" to complete current step and advance (-> S6b transition)
+- **Desktop:** Click "Done — Next Step" inline button to advance (-> S6b transition)
+- **Mobile:** Swipe left or tap right half of screen to advance (-> S6b transition)
+- **Mobile:** Swipe right or tap left half of screen to go back
 - Tap "< Exit Lab" to return to recipe view (-> S4), preserving current step position
 - Tap any step in the progress map to jump to that step
 
@@ -394,6 +396,122 @@
 - **First step:** Progress map shows step 1 as current, no completed steps
 - **Last step:** "On Deck" section hidden, button text changes to "Finish Recipe"
 - **Single-step recipe:** Progress map shows 1 of 1, no On Deck, button says "Finish Recipe"
+
+---
+
+### S6a-mobile: DIRTY-HANDS NAVIGATION (Mobile Only)
+**Purpose:** Allow hands-free or minimal-touch step navigation when the user's hands are messy. Replaces the fixed bottom button on mobile with swipe gestures and large invisible tap zones.
+
+```
+MOBILE LAB HUD — TAP ZONES & SWIPE
++------------------------------------------+
+| [< Exit Lab]   Recipe Title              |
+|------------------------------------------|
+|  ·  ·  (3)  ·  ·  ·  ·  ·              |  Progress dots
+|------------------------------------------|
+|          |                    |           |
+|          |                    |           |
+|   TAP    |    STEP 3 of 8    |   TAP     |
+|   LEFT   |                   |   RIGHT   |
+|   ZONE   |  "In a large      |   ZONE    |
+|          |   bowl, beat..."  |           |
+|   < go   |                   |   next >  |
+|   back   |                   |   step    |
+|          |                    |           |
+|  <----   |                    |   ---->   |  Edge arrow hints
+|          |                    |           |
+|------------------------------------------|
+|  On Deck — Step 4                        |
+|  "Gradually stir in the flour..."        |
++------------------------------------------+
+
+  NO fixed bottom button on mobile.
+  Swipe LEFT anywhere = advance to next step
+  Swipe RIGHT anywhere = go back one step
+```
+
+**Navigation Methods (layered, all active simultaneously):**
+
+| Method | Action | Direction |
+|--------|--------|-----------|
+| **Swipe left** | Advance to next step | Anywhere on screen |
+| **Swipe right** | Go back one step | Anywhere on screen |
+| **Tap right half** | Advance to next step | Right 40% of screen |
+| **Tap left half** | Go back one step | Left 40% of screen |
+| **Tap progress dot** | Jump to specific step | Progress strip |
+
+**Edge Arrow Hints:**
+
+```
+  Left edge:     ‹  (chevron-left)
+  Right edge:    ›  (chevron-right)
+
+  Appearance:
+  - Small, semi-transparent arrows (text-neutral-300/50)
+  - Positioned vertically centered on left/right screen edges
+  - Fade in on Lab entry, fade out after 3 seconds
+  - Reappear briefly on each step transition
+  - On first step: left arrow hidden (no previous step)
+  - On last step: right arrow hidden (use "Finish Recipe" tap zone instead)
+```
+
+**Swipe Behavior:**
+- Minimum swipe distance: ~50px to prevent accidental triggers
+- Swipe triggers the same slide animation as S6b (step transition)
+- Swipe direction matches content movement (swipe left = content slides left, next step enters from right)
+- No swipe on first step going back, no swipe on last step going forward (triggers finish instead)
+- Haptic feedback on swipe if device supports it (navigator.vibrate)
+
+**Tap Zone Behavior:**
+- Left 40% of screen = go back, right 40% = advance
+- Center 20% is a dead zone to prevent accidental taps while reading
+- Tap zones exclude the header area and progress strip (those have their own tap targets)
+- Single tap only — no visual feedback on the tap zone itself, the step transition IS the feedback
+- On last step: right tap zone triggers "Finish Recipe" (-> S6c)
+
+**First-Step State:**
+```
++------------------------------------------+
+|                                           |
+|   (no left arrow)     STEP 1 of 8    ›   |
+|                                           |
++------------------------------------------+
+  Left tap zone: disabled (no previous step)
+  Left arrow: hidden
+  Right arrow: visible, fades after 3s
+```
+
+**Last-Step State:**
+```
++------------------------------------------+
+|                                           |
+|   ‹     STEP 8 of 8     (no right arrow) |
+|                                           |
+|   On Deck section: HIDDEN                |
+|   Right tap/swipe: triggers S6c (finish) |
++------------------------------------------+
+```
+
+**Desktop vs Mobile:**
+
+| Feature | Mobile | Desktop |
+|---------|--------|---------|
+| Swipe gestures | Active | Disabled |
+| Tap zones | Active | Disabled |
+| Edge arrow hints | Shown (fade after 3s) | Hidden |
+| Fixed bottom button | **Removed** | Hidden |
+| Inline "Done" button | Hidden | **Shown** |
+
+**Elements:**
+| # | Element | Description | Status |
+|---|---------|-------------|--------|
+| 1 | Left tap zone | Invisible, left 40% of content area | NOT BUILT |
+| 2 | Right tap zone | Invisible, right 40% of content area | NOT BUILT |
+| 3 | Swipe handler | Touch event listener for horizontal swipes | NOT BUILT |
+| 4 | Left edge arrow | ‹ chevron, fades after 3s, hidden on step 1 | NOT BUILT |
+| 5 | Right edge arrow | › chevron, fades after 3s, hidden on last step | NOT BUILT |
+
+**Status:** NOT BUILT
 
 ---
 
@@ -545,7 +663,8 @@ USER ARRIVES
 | S5 | New Search | v0.1 | Compact header input | YES |
 | S6 | Lab Entry Banner | v0.2 | Confirmation before Lab | YES |
 | S6a | Lab HUD — Active Step | v0.2 | Guided cooking step view | YES |
+| S6a-m | Dirty-Hands Nav | v0.2 | Swipe + tap zones, edge arrows (mobile) | NOT BUILT |
 | S6b | Step Transition | v0.2 | Animation between steps | YES |
 | S6c | Recipe Complete | v0.2 | Celebration / end state | YES |
 
-**Total screens: 11 (9 fully built, 1 partial, 1 sub-state)**
+**Total screens: 12 (9 fully built, 1 partial, 1 sub-state, 1 not built)**
