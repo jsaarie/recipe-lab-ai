@@ -6,54 +6,93 @@ export type ScrapeResult =
   | { type: "raw"; content: string };
 
 export async function scrapeRecipePage(url: string): Promise<ScrapeResult> {
+  const abort = new AbortController();
   const res = await fetch(url, {
     headers: {
       "User-Agent":
         "Mozilla/5.0 (compatible; RecipeLabAI/1.0; +https://recipe-lab-ai.vercel.app)",
     },
-    signal: AbortSignal.timeout(10000),
+    signal: AbortSignal.any([abort.signal, AbortSignal.timeout(10000)]),
   });
 
   if (!res.ok) {
     throw new Error(`Failed to fetch page: ${res.status} ${res.statusText}`);
   }
 
-  const html = await res.text();
-  const $ = cheerio.load(html);
+  // Stream the response — abort as soon as we've found a complete JSON-LD Recipe block.
+  // Most recipe sites embed JSON-LD in the <head>, so we typically only need ~30–50%
+  // of the HTML before we can stop downloading.
+  const reader = res.body!.getReader();
+  const decoder = new TextDecoder();
+  let buffer = "";
 
-  // Try JSON-LD structured data first — free, no AI needed
-  const jsonLd = $('script[type="application/ld+json"]');
+  try {
+    while (true) {
+      const { done, value } = await reader.read();
+      if (done) break;
+
+      buffer += decoder.decode(value, { stream: true });
+
+      // Quick string check before running cheerio
+      if (buffer.includes("application/ld+json")) {
+        const result = tryExtractStructured(buffer, url);
+        if (result) {
+          abort.abort();
+          return result;
+        }
+      }
+
+      // Cap download at 250KB — enough for any raw-text AI path
+      if (buffer.length > 250_000) {
+        abort.abort();
+        break;
+      }
+    }
+  } finally {
+    reader.cancel().catch(() => {});
+  }
+
+  return extractRawContent(buffer, url);
+}
+
+function tryExtractStructured(html: string, url: string): ScrapeResult | null {
+  // Only run cheerio once the script tag is fully closed
+  const tagStart = html.indexOf("application/ld+json");
+  if (tagStart === -1) return null;
+  const tagEnd = html.indexOf("</script>", tagStart);
+  if (tagEnd === -1) return null; // tag not yet complete in stream
+
+  const $ = cheerio.load(html);
   let recipeData: Record<string, unknown> | null = null;
 
-  jsonLd.each((_, el) => {
-    if (recipeData) return; // already found one
+  $('script[type="application/ld+json"]').each((_, el) => {
+    if (recipeData) return;
     try {
       const data = JSON.parse($(el).text());
       const recipes = findRecipeObjects(data);
-      if (recipes.length > 0) {
-        recipeData = recipes[0] as Record<string, unknown>;
-      }
+      if (recipes.length > 0) recipeData = recipes[0] as Record<string, unknown>;
     } catch {
-      // Ignore malformed JSON-LD
+      // malformed JSON-LD
     }
   });
 
-  // If we have structured data, try to map it directly
-  if (recipeData) {
-    const mapped = mapJsonLdToRecipe(recipeData, url);
-    if (mapped) {
-      return { type: "structured", recipe: mapped };
-    }
-    // If mapping failed (missing key fields), send JSON-LD as raw text for AI
-    return { type: "raw", content: JSON.stringify(recipeData, null, 2) };
-  }
+  if (!recipeData) return null;
 
-  // Remove non-content elements for text extraction
+  const mapped = mapJsonLdToRecipe(recipeData, url);
+  if (mapped) return { type: "structured", recipe: mapped };
+
+  // Mapping failed but we have JSON-LD — send as raw for AI
+  return { type: "raw", content: JSON.stringify(recipeData, null, 2) };
+}
+
+function extractRawContent(html: string, url: string): ScrapeResult {
+  void url;
+  const $ = cheerio.load(html);
+
   $(
     "script, style, nav, header, footer, aside, iframe, noscript, svg, .ad, .ads, .advertisement, [role='banner'], [role='navigation'], [role='complementary']"
   ).remove();
 
-  // Fallback: extract text from likely recipe containers
   const selectors = [
     '[itemtype*="Recipe"]',
     ".recipe",
@@ -67,13 +106,10 @@ export async function scrapeRecipePage(url: string): Promise<ScrapeResult> {
     const el = $(selector).first();
     if (el.length) {
       const text = cleanText(el.text());
-      if (text.length > 200) {
-        return { type: "raw", content: truncateContent(text) };
-      }
+      if (text.length > 200) return { type: "raw", content: truncateContent(text) };
     }
   }
 
-  // Last resort: body text
   const bodyText = cleanText($("body").text());
   return { type: "raw", content: truncateContent(bodyText) };
 }

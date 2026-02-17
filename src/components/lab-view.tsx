@@ -7,6 +7,7 @@ import type { ParsedRecipe } from "@/types/recipe";
 import { detectTimer, formatTime } from "@/lib/timer-utils";
 import { StepTimer, type TimerState } from "@/components/step-timer";
 import { TimerToast } from "@/components/timer-toast";
+import { StepIngredients } from "@/components/step-ingredients";
 
 interface LabViewProps {
   recipe: ParsedRecipe;
@@ -86,6 +87,23 @@ export function LabView({ recipe, initialStep = 0, onExitLab, onComplete }: LabV
     () => steps.map((step) => detectTimer(step)),
     [steps]
   );
+
+  // Ingredient check state: Map of stepIndex → Set of checked ingredient indices
+  const [ingredientChecks, setIngredientChecks] = useState<Map<number, Set<number>>>(new Map());
+
+  const handleToggleIngredient = useCallback((stepIndex: number, ingredientIndex: number) => {
+    setIngredientChecks((prev) => {
+      const next = new Map(prev);
+      const stepSet = new Set(prev.get(stepIndex) ?? []);
+      if (stepSet.has(ingredientIndex)) {
+        stepSet.delete(ingredientIndex);
+      } else {
+        stepSet.add(ingredientIndex);
+      }
+      next.set(stepIndex, stepSet);
+      return next;
+    });
+  }, []);
 
   // Timer state: Map of stepIndex → TimerState
   const [timers, setTimers] = useState<Map<number, TimerState>>(new Map());
@@ -300,6 +318,15 @@ export function LabView({ recipe, initialStep = 0, onExitLab, onComplete }: LabV
             <p className="text-left text-lg leading-relaxed text-neutral-800 sm:text-xl sm:leading-relaxed">
               {steps[currentStep]}
             </p>
+
+            {/* Smart Ingredients */}
+            {recipe.stepIngredients?.[currentStep] && (
+              <StepIngredients
+                ingredients={recipe.stepIngredients[currentStep]}
+                checkedSet={ingredientChecks.get(currentStep) ?? new Set()}
+                onToggle={(i) => handleToggleIngredient(currentStep, i)}
+              />
+            )}
 
             {/* Background Timers */}
             {backgroundTimers.length > 0 && (

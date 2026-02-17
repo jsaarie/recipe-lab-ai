@@ -4,6 +4,14 @@ export interface Ingredient {
   item: string;
 }
 
+export interface StepIngredient {
+  quantity: string;
+  unit: string;
+  item: string;
+  totalQuantity?: string;
+  totalUnit?: string;
+}
+
 export interface ParsedRecipe {
   title: string;
   source: string;
@@ -14,4 +22,5 @@ export interface ParsedRecipe {
   ingredients: Ingredient[];
   instructions: string[];
   notes: string;
+  stepIngredients?: StepIngredient[][];
 }

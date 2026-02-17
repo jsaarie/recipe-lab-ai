@@ -83,60 +83,58 @@ export function StepTimer({ detected, timerState, onStart, onTogglePause }: Step
     }
   };
 
+  // Whole widget is one tap target — circle + label together
+  const isActionable = status === "idle" || status === "running" || status === "paused";
+
   return (
-    <div className="mt-5 flex flex-col items-center gap-3" onClick={(e) => e.stopPropagation()}>
-      {/* Circle with centered text */}
-      <div className="relative">
-        <CircleProgress percent={percent} status={status} />
-        <div className="absolute inset-0 flex flex-col items-center justify-center">
-          {status === "finished" ? (
-            <>
-              <Check className="size-6 text-[#7C9070]" />
-              <span className="text-xs font-medium text-[#7C9070]">Done!</span>
-            </>
-          ) : (
-            <>
-              <span className="text-xl font-semibold tabular-nums text-neutral-800">
-                {formatTime(remaining)}
-              </span>
-              {status === "paused" && (
-                <span className="text-[10px] font-medium text-neutral-400">Paused</span>
-              )}
-            </>
-          )}
+    <div className="mt-5 flex flex-col items-center" onClick={(e) => e.stopPropagation()}>
+      <button
+        onClick={handleClick}
+        disabled={!isActionable}
+        className="flex flex-col items-center gap-3 rounded-2xl p-3 -m-3 transition-colors hover:bg-neutral-100 active:bg-neutral-200 disabled:pointer-events-none"
+      >
+        {/* Circle with centered text */}
+        <div className="relative">
+          <CircleProgress percent={percent} status={status} />
+          <div className="absolute inset-0 flex flex-col items-center justify-center">
+            {status === "finished" ? (
+              <>
+                <Check className="size-6 text-[#7C9070]" />
+                <span className="text-xs font-medium text-[#7C9070]">Done!</span>
+              </>
+            ) : (
+              <>
+                <span className="text-xl font-semibold tabular-nums text-neutral-800">
+                  {formatTime(remaining)}
+                </span>
+                {status === "paused" && (
+                  <span className="text-[10px] font-medium text-neutral-400">Paused</span>
+                )}
+              </>
+            )}
+          </div>
         </div>
-      </div>
 
-      {/* Action button below circle */}
-      {status === "idle" && (
-        <button
-          onClick={handleClick}
-          className="flex items-center gap-1.5 rounded-full border border-neutral-300 px-4 py-2 text-sm text-neutral-500 transition-colors hover:border-[#7C9070]/40 hover:text-neutral-700"
-        >
-          <Timer className="size-4" />
-          Start Timer
-        </button>
-      )}
-
-      {status === "running" && (
-        <button
-          onClick={handleClick}
-          className="flex items-center gap-1.5 rounded-full bg-[#7C9070] px-4 py-2 text-sm font-medium text-white shadow-sm transition-colors hover:bg-[#6B7F60]"
-        >
-          <Pause className="size-3.5" />
-          Pause
-        </button>
-      )}
-
-      {status === "paused" && (
-        <button
-          onClick={handleClick}
-          className="flex items-center gap-1.5 rounded-full border border-[#7C9070]/30 bg-[#7C9070]/5 px-4 py-2 text-sm font-medium text-[#7C9070] transition-colors hover:bg-[#7C9070]/10"
-        >
-          <Play className="size-3.5" />
-          Resume
-        </button>
-      )}
+        {/* Label below circle */}
+        {status === "idle" && (
+          <div className="flex items-center gap-1.5 rounded-full border border-neutral-300 px-4 py-2 text-sm text-neutral-500">
+            <Timer className="size-4" />
+            Start Timer
+          </div>
+        )}
+        {status === "running" && (
+          <div className="flex items-center gap-1.5 rounded-full bg-[#7C9070] px-4 py-2 text-sm font-medium text-white shadow-sm">
+            <Pause className="size-3.5" />
+            Pause
+          </div>
+        )}
+        {status === "paused" && (
+          <div className="flex items-center gap-1.5 rounded-full border border-[#7C9070]/30 bg-[#7C9070]/5 px-4 py-2 text-sm font-medium text-[#7C9070]">
+            <Play className="size-3.5" />
+            Resume
+          </div>
+        )}
+      </button>
     </div>
   );
 }

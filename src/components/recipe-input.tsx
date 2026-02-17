@@ -3,15 +3,16 @@
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import type { ParsedRecipe } from "@/types/recipe";
+import type { ParsedRecipe, StepIngredient } from "@/types/recipe";
 
 interface RecipeInputProps {
   compact?: boolean;
   onRecipeParsed: (recipe: ParsedRecipe, source: "structured" | "ai") => void;
   onLoading: (loading: boolean) => void;
+  onStepIngredientsMapped?: (si: StepIngredient[][] | null) => void;
 }
 
-export function RecipeInput({ compact, onRecipeParsed, onLoading }: RecipeInputProps) {
+export function RecipeInput({ compact, onRecipeParsed, onLoading, onStepIngredientsMapped }: RecipeInputProps) {
   const [url, setUrl] = useState("");
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
@@ -56,7 +57,24 @@ export function RecipeInput({ compact, onRecipeParsed, onLoading }: RecipeInputP
         return;
       }
 
-      onRecipeParsed(data.recipe, data.source || "ai");
+      const source = data.source || "ai";
+      onRecipeParsed(data.recipe, source);
+
+      // For structured data, kick off step-ingredient mapping in the background.
+      // The Cook button stays disabled until this resolves (or fails).
+      if (source === "structured" && onStepIngredientsMapped) {
+        fetch("/api/map-ingredients", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            ingredients: data.recipe.ingredients,
+            instructions: data.recipe.instructions,
+          }),
+        })
+          .then((r) => r.json())
+          .then((d) => onStepIngredientsMapped(d.stepIngredients ?? null))
+          .catch(() => onStepIngredientsMapped(null));
+      }
     } catch {
       setError("Something went wrong. Please try again.");
     } finally {
@@ -70,7 +88,7 @@ export function RecipeInput({ compact, onRecipeParsed, onLoading }: RecipeInputP
       <form onSubmit={handleSubmit} className="relative">
         <Input
           type="url"
-          placeholder="Paste a recipe URL..."
+          placeholder="Paste a recipe link..."
           value={url}
           onChange={(e) => {
             setUrl(e.target.value);

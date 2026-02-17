@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { scrapeRecipePage } from "@/lib/scraper";
-import { extractRecipe } from "@/lib/ai/claude";
+import { extractRecipe as extractWithGemini } from "@/lib/ai/gemini";
+import { extractRecipe as extractWithClaude } from "@/lib/ai/claude";
 
 export async function POST(req: NextRequest) {
   try {
@@ -27,12 +28,12 @@ export async function POST(req: NextRequest) {
     // Scrape page content
     const result = await scrapeRecipePage(url);
 
-    // If JSON-LD gave us a complete recipe, return it directly (no AI cost)
+    // Structured data: return immediately — client calls /api/map-ingredients in background
     if (result.type === "structured") {
       return NextResponse.json({ recipe: result.recipe, source: "structured" });
     }
 
-    // Fallback: use Claude AI to extract from raw text
+    // Use AI to extract from raw text
     if (!result.content || result.content.length < 50) {
       return NextResponse.json(
         { error: "Could not extract content from this page" },
@@ -40,8 +41,17 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    const recipe = await extractRecipe(result.content, url);
-    return NextResponse.json({ recipe, source: "ai" });
+    // Try Gemini first, fall back to Claude
+    let recipe;
+    let aiSource = "gemini";
+    try {
+      recipe = await extractWithGemini(result.content, url);
+    } catch {
+      aiSource = "claude";
+      recipe = await extractWithClaude(result.content, url);
+    }
+
+    return NextResponse.json({ recipe, source: aiSource });
   } catch (err) {
     console.error("Parse recipe error:", err);
 

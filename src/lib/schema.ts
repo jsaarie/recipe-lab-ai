@@ -6,6 +6,14 @@ export const ingredientSchema = z.object({
   item: z.string(),
 });
 
+export const stepIngredientSchema = z.object({
+  quantity: z.string(),
+  unit: z.string(),
+  item: z.string(),
+  totalQuantity: z.string().optional(),
+  totalUnit: z.string().optional(),
+});
+
 export const parsedRecipeSchema = z.object({
   title: z.string(),
   source: z.string(),
@@ -16,6 +24,13 @@ export const parsedRecipeSchema = z.object({
   ingredients: z.array(ingredientSchema),
   instructions: z.array(z.string()),
   notes: z.string(),
+  stepIngredients: z.array(z.array(stepIngredientSchema)).optional(),
 });
 
 export type ParsedRecipeSchema = z.infer<typeof parsedRecipeSchema>;
+
+// Minimal payload for /api/map-ingredients — only what the AI needs
+export const mapIngredientsInputSchema = z.object({
+  ingredients: z.array(ingredientSchema),
+  instructions: z.array(z.string()),
+});

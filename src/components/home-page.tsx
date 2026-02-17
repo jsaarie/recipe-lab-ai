@@ -6,7 +6,7 @@ import { RecipeCard } from "@/components/recipe-card";
 import { LabBanner } from "@/components/lab-banner";
 import { LabView } from "@/components/lab-view";
 import { LabComplete } from "@/components/lab-complete";
-import type { ParsedRecipe } from "@/types/recipe";
+import type { ParsedRecipe, StepIngredient } from "@/types/recipe";
 
 type View = "recipe" | "lab" | "complete";
 
@@ -14,6 +14,7 @@ export function HomePage() {
   const [recipe, setRecipe] = useState<ParsedRecipe | null>(null);
   const [recipeSource, setRecipeSource] = useState<"structured" | "ai">("structured");
   const [loading, setLoading] = useState(false);
+  const [ingredientsLoading, setIngredientsLoading] = useState(false);
   const [view, setView] = useState<View>("recipe");
   const [labStep, setLabStep] = useState(0);
 
@@ -24,6 +25,14 @@ export function HomePage() {
     setRecipeSource(s);
     setView("recipe");
     setLabStep(0);
+    setIngredientsLoading(s === "structured");
+  }, []);
+
+  const handleStepIngredientsMapped = useCallback((si: StepIngredient[][] | null) => {
+    setIngredientsLoading(false);
+    if (si) {
+      setRecipe((prev) => (prev ? { ...prev, stepIngredients: si } : prev));
+    }
   }, []);
 
   const handleEnterLab = useCallback(() => {
@@ -75,14 +84,25 @@ export function HomePage() {
     <div className="flex min-h-screen flex-col items-center bg-[#FAF8F5] px-4">
       {/* Hero state: centered */}
       {!hasRecipe && !loading && (
-        <div className="flex w-full max-w-3xl flex-1 flex-col items-center justify-center gap-8">
-          <h1 className="text-3xl font-bold tracking-tight text-neutral-700 sm:text-5xl">
-            Recipe Lab <span className="text-[#7C9070]">AI</span>
-          </h1>
-          <RecipeInput
-            onRecipeParsed={handleRecipeParsed}
-            onLoading={setLoading}
-          />
+        <div className="flex w-full max-w-xl flex-1 flex-col items-center justify-center gap-6">
+          <div className="flex flex-col items-center gap-2 text-center">
+            <h1 className="text-3xl font-bold tracking-tight text-neutral-700 sm:text-5xl">
+              Recipe Lab <span className="text-[#7C9070]">AI</span>
+            </h1>
+            <p className="text-base text-neutral-500 sm:text-lg">
+              Stop Scrolling. Start Cooking.
+            </p>
+          </div>
+          <div className="w-full space-y-3">
+            <RecipeInput
+              onRecipeParsed={handleRecipeParsed}
+              onLoading={setLoading}
+              onStepIngredientsMapped={handleStepIngredientsMapped}
+            />
+            <p className="text-center text-sm text-neutral-400">
+              Paste any recipe URL to remove the clutter and get straight to the kitchen.
+            </p>
+          </div>
         </div>
       )}
 
@@ -129,6 +149,7 @@ export function HomePage() {
                 compact
                 onRecipeParsed={handleRecipeParsed}
                 onLoading={setLoading}
+                onStepIngredientsMapped={handleStepIngredientsMapped}
               />
             </div>
           </header>
@@ -136,7 +157,7 @@ export function HomePage() {
             <RecipeCard
               recipe={recipe}
               source={recipeSource}
-              afterTitle={<LabBanner recipe={recipe} onEnterLab={handleEnterLab} />}
+              afterTitle={<LabBanner recipe={recipe} onEnterLab={handleEnterLab} ingredientsLoading={ingredientsLoading} />}
             />
           </main>
         </>

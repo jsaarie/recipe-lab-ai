@@ -4,6 +4,26 @@ This document tracks each production deployment, including the version, release 
 
 ---
 
+## V0.4 — Smart Ingredients
+
+**Date:** 2026-02-16
+
+### Features
+
+- Per-step ingredient mapping: each Lab HUD step now highlights the ingredients needed for that step
+  - AI maps ingredients to steps using index-based response schema (low-latency, minimal tokens)
+  - Gemini 2.5 Flash primary with Claude Haiku fallback
+- Optimistic UI: recipe page loads immediately (~300ms), Cook button unlocks in the background (~1s) once ingredient mapping completes
+  - LabBanner shows "Mapping ingredients…" spinner while loading; Cook button disabled until ready
+- Streaming HTML scraper: download aborted as soon as JSON-LD Recipe block is fully received (saves 60–65% of HTML download for structured-data sites)
+- Split API architecture: `/api/parse-recipe` returns immediately; `/api/map-ingredients` runs as a background call from the client
+- Extended thinking disabled on Gemini (`thinkingBudget: 0`) for fast, deterministic responses
+- Homepage copy: added "Stop Scrolling. Start Cooking." subtitle and helper text below input
+- Input placeholder updated to "Paste a recipe link..."
+- Step Timer tap target expanded to the entire widget (circle + label) instead of a small button
+
+---
+
 ## V0.3 — Step Timers
 
 **Date:** 2026-02-16

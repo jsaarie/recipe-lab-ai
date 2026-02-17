@@ -583,7 +583,7 @@ MOBILE LAB HUD — TAP ZONES & SWIPE
 
 ---
 
-### S6d: STEP TIMER (v0.4)
+### S6d: STEP TIMER (v0.3)
 **Purpose:** Auto-detected countdown timers for timed steps. Lets users track cook/wait times without leaving the Lab HUD.
 
 #### Idle State (timer detected, not started)
@@ -703,6 +703,281 @@ MOBILE LAB HUD — TAP ZONES & SWIPE
 
 ---
 
+## V0.4 — Smart Ingredients
+
+---
+
+### S6e: SMART INGREDIENTS — PER-STEP DISPLAY
+**Purpose:** Show only the ingredients relevant to the current cooking step, inline below the instruction text. Reduces cognitive load — the cook sees exactly what they need for this step instead of scanning a full list.
+
+#### Standard State (step has ingredients)
+```
++------------------------------------------+
+| [←]       Chicken Parmesan               |
+|------------------------------------------|
+|                                          |
+|  Step 3 of 8                             |
+|  ████████████░░░░░░░░░░░░░░░░           |
+|                                          |
+|  In a large bowl, combine the            |
+|  flour, salt, and pepper. Dredge         |
+|  each chicken breast in the              |
+|  flour mixture.                          |
+|                                          |
+|  ┌──────────────────────────────┐        |
+|  │  ☐  1½ cups all-purpose flour │        |
+|  │  ☐  1 tsp salt                │        |
+|  │  ☐  ½ tsp black pepper       │        |
+|  └──────────────────────────────┘        |
+|                                          |
+|  [ Done — Next Step          › ]         |
++------------------------------------------+
+     Ingredient card: bg-neutral-50,
+     rounded-lg, border border-neutral-200
+     Checkboxes: rounded, border-neutral-300
+```
+
+**Layout (top to bottom within the step content area):**
+| Zone | Content | Notes |
+|------|---------|-------|
+| Step label + progress bar | Unchanged from S6a | Existing |
+| Instruction text | Unchanged | Existing |
+| **Ingredient card** | Checkable list of step-relevant ingredients | **NEW** |
+| Background timer pills | Running timers on other steps | Existing |
+| Step timer | Countdown for current step (if detected) | Existing |
+| Action button | "Done — Next Step" (desktop only) | Existing |
+
+**Placement rule:** Ingredients sit directly below the instruction text, above timers. This mirrors the logical flow: read what to do → see what you need → start any timer.
+
+---
+
+#### Checked State (some ingredients marked as used)
+```
+|  ┌──────────────────────────────┐        |
+|  │  ✓  1½ cups all-purpose flour │        |  (strikethrough, muted)
+|  │  ✓  1 tsp salt                │        |  (strikethrough, muted)
+|  │  ☐  ½ tsp black pepper       │        |  (normal)
+|  └──────────────────────────────┘        |
+     Checked: line-through, text-neutral-400
+     Checkbox fill: bg-[#7C9070], white check
+     Unchecked: text-neutral-700
+```
+
+**Behavior:**
+- Tap/click the row or checkbox to toggle
+- Checked items show a filled green checkbox with white checkmark
+- Checked item text gets `line-through` + `text-neutral-400`
+- Unchecked items remain `text-neutral-700`
+- **Check state persists across steps** — navigating away and back retains the state
+- Check state is local (not persisted across page reloads, same as v0.1 ingredient checks)
+- Haptic feedback on toggle (mobile, `navigator.vibrate(10)`)
+
+---
+
+#### All Checked State (every ingredient in this step marked)
+```
+|  ┌──────────────────────────────┐        |
+|  │  ✓  1½ cups all-purpose flour │        |
+|  │  ✓  1 tsp salt                │        |
+|  │  ✓  ½ tsp black pepper       │        |
+|  └──────────────────────────────┘        |
+     Card border shifts to border-[#7C9070]/30
+     Subtle visual "done" cue, no animation
+```
+
+**Behavior:**
+- When all ingredients for a step are checked, the card border tints sage green
+- No blocking behavior — user can still advance freely regardless of check state
+- Purely a visual confirmation cue
+
+---
+
+#### Empty State (step has no ingredients)
+```
++------------------------------------------+
+| [←]       Chicken Parmesan               |
+|------------------------------------------|
+|                                          |
+|  Step 1 of 8                             |
+|  ██░░░░░░░░░░░░░░░░░░░░░░░░░░           |
+|                                          |
+|  Preheat oven to 400°F.                  |
+|                                          |
+|                  (no ingredient card)     |
+|                                          |
+|  [ Done — Next Step          › ]         |
++------------------------------------------+
+     Ingredient section is hidden entirely.
+     Layout collapses cleanly — no empty space.
+```
+
+**Behavior:**
+- Steps like "Preheat oven", "Let rest for 10 minutes", or "Serve and enjoy" typically use no ingredients
+- The ingredient card is simply not rendered — no "No ingredients" placeholder
+- The step timer (if present) moves up to fill the space naturally
+
+---
+
+### S6e-split: SPLIT QUANTITY DISPLAY
+**Purpose:** When a single ingredient is used across multiple steps, show only the portion needed for this step with a subtle reference to the total amount.
+
+#### Split quantity notation
+```
+|  ┌──────────────────────────────┐        |
+|  │  ☐  1 cup flour  (of 2 cups) │        |  ← split quantity
+|  │  ☐  2 eggs                    │        |  ← full quantity (used in one step)
+|  │  ☐  ½ cup sugar  (of 1 cup)  │        |  ← split quantity
+|  └──────────────────────────────┘        |
+     Split ref: text-neutral-400, text-xs
+     Inline after the main quantity+item
+```
+
+**Format:**
+| Scenario | Display | Notes |
+|----------|---------|-------|
+| Ingredient used in only this step | `1 tsp salt` | Normal, no annotation |
+| Ingredient split across steps | `1 cup flour` `(of 2 cups)` | Parenthetical in muted small text |
+| Ingredient fully used here but also elsewhere | `2 tbsp butter` `(of 4 tbsp)` | Shows this step's portion |
+
+**Why this matters:** If a recipe calls for "2 cups flour" but step 2 uses 1½ cups and step 5 uses ½ cup, the cook needs to know to measure out only 1½ cups now — not dump the whole bag. The parenthetical `(of 2 cups)` provides context without clutter.
+
+---
+
+### S6e-full: COMBINED LAB HUD VIEW (All v0.2–v0.4 Features)
+**Purpose:** Reference wireframe showing how all Lab HUD elements stack together on a step that has ingredients AND a timer.
+
+```
++------------------------------------------+
+| [←]       Chicken Parmesan               |  Lab header
+|------------------------------------------|
+|                                          |
+|  Step 4 of 8                             |  Step label
+|  ████████████████░░░░░░░░░░░░░           |  Progress bar
+|                                          |
+|  Bake the breaded chicken at             |  Instruction text
+|  400°F until golden brown and            |
+|  cooked through, about 25 min.           |
+|                                          |
+|  ┌──────────────────────────────┐        |
+|  │  ☐  4 breaded chicken breasts │        |  Smart Ingredients (v0.4)
+|  │  ✓  1 cup marinara  (of 2c)  │        |  (with split quantity)
+|  │  ☐  1 cup mozzarella          │        |
+|  └──────────────────────────────┘        |
+|                                          |
+|  ┌─────────────────┐                    |
+|  │ Step 2 · 08:15  │                    |  Background timer pills
+|  └─────────────────┘                    |
+|                                          |
+|       ┌───────────────┐                  |
+|       │    24:38      │                  |  Step timer (v0.3)
+|       │   ╭──────╮    │                  |  Circular countdown
+|       │   │      │    │                  |
+|       │   ╰──────╯    │                  |
+|       │   [ Pause ]   │                  |
+|       └───────────────┘                  |
+|                                          |
+|  [ Done — Next Step          › ]         |  Action button (desktop)
++------------------------------------------+
+```
+
+**Stacking order (top to bottom):**
+1. Lab header (sticky)
+2. Step label + progress bar
+3. Instruction text
+4. **Smart Ingredients card** (new in v0.4)
+5. Background timer pills (v0.3)
+6. Step timer widget (v0.3)
+7. Action button (desktop only)
+
+---
+
+### S6e-interaction: INGREDIENT CHECK PERSISTENCE
+**Purpose:** Document how checked ingredients behave when navigating between steps.
+
+```
+STEP 2: User checks "flour" and "salt"
+  ✓ 1½ cups flour
+  ✓ 1 tsp salt
+  ☐ ½ tsp pepper
+        |
+        | navigates to step 3, then back to step 2
+        v
+STEP 2: Checks are preserved
+  ✓ 1½ cups flour       (still checked)
+  ✓ 1 tsp salt          (still checked)
+  ☐ ½ tsp pepper        (still unchecked)
+```
+
+**Rules:**
+| Behavior | Detail |
+|----------|--------|
+| State storage | React state — `Map<string, Set<number>>` keyed by `"stepIndex-ingredientIndex"` |
+| Navigation | Checks survive step transitions (forward, back, jump via progress bar) |
+| Exit & re-enter Lab | Checks survive (state lives in parent `home-page.tsx`) |
+| Page reload | Checks reset (no persistence to localStorage in v0.4) |
+| New recipe | Checks reset (new recipe = new state) |
+
+---
+
+### S6e-data: DATA MODEL & AI EXTRACTION
+**Purpose:** Document the data flow changes required for Smart Ingredients.
+
+#### ParsedRecipe extension
+```typescript
+interface ParsedRecipe {
+  // ... existing fields (title, source, times, servings,
+  //     ingredients, instructions, notes) ...
+
+  stepIngredients: {
+    quantity: string;   // "1½" or "1" — this step's portion
+    unit: string;       // "cups", "tsp"
+    item: string;       // "all-purpose flour"
+    totalQuantity?: string;  // "2" — full recipe amount (only if split)
+    totalUnit?: string;      // "cups" — full recipe unit (only if split)
+  }[][];
+  // stepIngredients[i] = ingredients for instructions[i]
+  // stepIngredients[i] = [] means step i uses no ingredients
+}
+```
+
+#### AI prompt extension
+```
+Single AI call (no second pass). The extraction prompt adds:
+
+"For each instruction step, identify which ingredients are used in that
+step. If an ingredient is used across multiple steps, split the quantity
+proportionally. Return a `stepIngredients` array parallel to
+`instructions`, where each entry is an array of ingredients used in
+that step. Include `totalQuantity` and `totalUnit` only when the
+ingredient is split across steps."
+```
+
+#### Validation
+```
+Zod schema extended with:
+
+stepIngredients: z.array(
+  z.array(
+    ingredientSchema.extend({
+      totalQuantity: z.string().optional(),
+      totalUnit: z.string().optional(),
+    })
+  )
+)
+
+Post-validation check: stepIngredients.length === instructions.length
+```
+
+#### Fallback behavior
+| Scenario | Handling |
+|----------|----------|
+| AI returns no `stepIngredients` | Feature hidden — Lab HUD works exactly like v0.3 |
+| `stepIngredients` length mismatch | Feature hidden — fall back gracefully |
+| Step has empty array `[]` | Ingredient card hidden for that step |
+| Structured data (JSON-LD) parse | No `stepIngredients` — feature hidden (AI-only) |
+
+---
+
 ## Full User Journey Map
 
 ```
@@ -786,6 +1061,11 @@ USER ARRIVES
 | S6a-m | Dirty-Hands Nav | v0.2 | Swipe + tap zones, edge arrows (mobile) | YES |
 | S6b | Step Transition | v0.2 | Animation between steps | YES |
 | S6c | Recipe Complete | v0.2 | Celebration / end state | YES |
-| S6d | Step Timer | v0.4 | Auto-detected countdown timers in HUD | YES |
+| S6d | Step Timer | v0.3 | Auto-detected countdown timers in HUD | YES |
+| S6e | Smart Ingredients | v0.4 | Per-step ingredient display in HUD | NO |
+| S6e-split | Split Quantity | v0.4 | Partial-use ingredient notation | NO |
+| S6e-full | Combined HUD View | v0.4 | All features stacked together | NO |
+| S6e-interaction | Check Persistence | v0.4 | Cross-step checkbox state | NO |
+| S6e-data | Data Model & AI | v0.4 | ParsedRecipe extension + prompt | NO |
 
-**Total screens: 13 (11 fully built, 1 partial, 1 sub-state)**
+**Total screens: 18 (11 fully built, 1 partial, 5 not built, 1 sub-state)**
