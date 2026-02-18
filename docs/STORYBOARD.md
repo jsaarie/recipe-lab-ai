@@ -549,7 +549,7 @@ MOBILE LAB HUD — TAP ZONES & SWIPE
 |                                          |
 |                                          |
 |                                          |
-|             You did it!                  |
+|             Enjoy!                       |
 |                                          |
 |   Classic Chocolate Chip Cookies         |
 |   8 steps completed                      |
@@ -557,11 +557,11 @@ MOBILE LAB HUD — TAP ZONES & SWIPE
 |                                          |
 |   [ View Full Recipe ]                   |
 |                                          |
-|   [ Cook Another ]                       |
+|   [ Back to Last Step ]                  |
 |                                          |
 |                                          |
 +------------------------------------------+
-     "You did it!": text-2xl, bold, text-[#7C9070]
+     "Enjoy!": text-3xl, bold, text-[#7C9070]
      Title: text-lg, text-neutral-700
      Buttons: stacked, full-width
 ```
@@ -569,15 +569,15 @@ MOBILE LAB HUD — TAP ZONES & SWIPE
 **Elements:**
 | # | Element | Description | Status |
 |---|---------|-------------|--------|
-| 1 | Celebration text | "You did it!" — large, bold, brand green | Built |
+| 1 | Celebration text | "Enjoy!" — large, bold, brand green | Built |
 | 2 | Recipe title | Name of the completed recipe | Built |
 | 3 | Step count | "N steps completed" — muted subtext | Built |
-| 4 | View Recipe button | Returns to S4 (recipe view) — outline style | Built |
-| 5 | Cook Another button | Returns to S1 (hero/landing) — brand green | Built |
+| 4 | View Recipe button | Returns to S4 (recipe view) — brand green | Built |
+| 5 | Back to Last Step button | Returns to Lab HUD at the final step — outline style | Built |
 
 **User Actions:**
 - "View Full Recipe" -> S4 (recipe view with banner)
-- "Cook Another" -> S1 (landing page, clears current recipe)
+- "Back to Last Step" -> S6a at the last step (so user can re-read the final instruction)
 
 **Status:** Built
 

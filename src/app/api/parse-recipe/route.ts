@@ -51,6 +51,21 @@ export async function POST(req: NextRequest) {
       recipe = await extractWithClaude(result.content, url);
     }
 
+    // Validate that the AI actually found a recipe
+    if (
+      !recipe ||
+      !recipe.title ||
+      !Array.isArray(recipe.ingredients) ||
+      recipe.ingredients.length === 0 ||
+      !Array.isArray(recipe.instructions) ||
+      recipe.instructions.length === 0
+    ) {
+      return NextResponse.json(
+        { error: "No recipe found on this page. Try a direct link to a recipe." },
+        { status: 422 }
+      );
+    }
+
     return NextResponse.json({ recipe, source: aiSource });
   } catch (err) {
     console.error("Parse recipe error:", err);

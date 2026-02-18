@@ -52,8 +52,7 @@ The roadmap is centered around **The Lab** — a guided cooking HUD that takes u
 | v0.2 | Lab Foundation | Cooking HUD entry point ("Cook" button), full-screen single-step view with large Next/Back tap targets, collapsible mini-overview strip for step jumping, progress indicator (Step N of M) |
 | v0.3 | Timers | Optional user-triggered step timers, up to 3 concurrent timers in a visible timer tray, audio/visual alerts on completion |
 | v0.4 | Smart Ingredients | AI-powered per-step ingredient mapping shown in the HUD, expandable full ingredient list panel |
-| v0.5 | State & Navigation | Full state persistence when flipping between Lab and recipe view (step position + running timers), smooth transitions between views |
-| v0.6 | Polish & Mobile | HUD optimized for kitchen use (large touch targets, high-contrast layout), responsive design tuning, performance optimization |
+| v0.5 | Kitchen Psychology | AI classifies each recipe into a cooking archetype (Precision, Fire & Speed, Low & Slow, Assembly, Simmer & Build) at parse time; the Lab HUD adapts its information hierarchy and layout density to match the energy and cognitive demands of that style of cooking |
 | v1.0 | The Lab Complete | Fully integrated guided cooking experience — confirm a recipe, enter the Lab, cook step-by-step with per-step ingredients, timers, and seamless recipe/Lab switching |
 
 ### Post-V1.0 Horizon

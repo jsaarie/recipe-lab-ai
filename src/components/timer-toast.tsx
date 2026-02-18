@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef, useCallback } from "react";
 import { Timer } from "lucide-react";
 
 interface TimerToastProps {
@@ -8,60 +8,120 @@ interface TimerToastProps {
   onDismiss: () => void;
 }
 
-function playChime() {
-  try {
-    const ctx = new AudioContext();
-    const osc = ctx.createOscillator();
-    const gain = ctx.createGain();
-    osc.connect(gain);
-    gain.connect(ctx.destination);
-    osc.frequency.value = 880;
-    osc.type = "sine";
-    gain.gain.setValueAtTime(0.3, ctx.currentTime);
-    gain.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.5);
-    osc.start(ctx.currentTime);
-    osc.stop(ctx.currentTime + 0.5);
+function createAlarmLoop(ctx: AudioContext): { stop: () => void } {
+  let stopped = false;
+  const masterGain = ctx.createGain();
+  masterGain.gain.value = 0.3;
+  masterGain.connect(ctx.destination);
 
-    // Second tone
+  // Play a two-tone chime, then schedule the next one
+  function playChime(when: number) {
+    if (stopped) return;
+
+    const osc1 = ctx.createOscillator();
+    const g1 = ctx.createGain();
+    osc1.connect(g1);
+    g1.connect(masterGain);
+    osc1.frequency.value = 880;
+    osc1.type = "sine";
+    g1.gain.setValueAtTime(1, when);
+    g1.gain.exponentialRampToValueAtTime(0.01, when + 0.4);
+    osc1.start(when);
+    osc1.stop(when + 0.4);
+
     const osc2 = ctx.createOscillator();
-    const gain2 = ctx.createGain();
-    osc2.connect(gain2);
-    gain2.connect(ctx.destination);
+    const g2 = ctx.createGain();
+    osc2.connect(g2);
+    g2.connect(masterGain);
     osc2.frequency.value = 1100;
     osc2.type = "sine";
-    gain2.gain.setValueAtTime(0.3, ctx.currentTime + 0.15);
-    gain2.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.65);
-    osc2.start(ctx.currentTime + 0.15);
-    osc2.stop(ctx.currentTime + 0.65);
-  } catch {
-    // Audio not available
+    g2.gain.setValueAtTime(1, when + 0.15);
+    g2.gain.exponentialRampToValueAtTime(0.01, when + 0.55);
+    osc2.start(when + 0.15);
+    osc2.stop(when + 0.55);
+
+    // Third higher tone for urgency
+    const osc3 = ctx.createOscillator();
+    const g3 = ctx.createGain();
+    osc3.connect(g3);
+    g3.connect(masterGain);
+    osc3.frequency.value = 1320;
+    osc3.type = "sine";
+    g3.gain.setValueAtTime(1, when + 0.3);
+    g3.gain.exponentialRampToValueAtTime(0.01, when + 0.7);
+    osc3.start(when + 0.3);
+    osc3.stop(when + 0.7);
   }
+
+  // Play immediately, then repeat every 2 seconds
+  playChime(ctx.currentTime);
+  const interval = setInterval(() => {
+    if (stopped) return;
+    playChime(ctx.currentTime);
+  }, 2000);
+
+  return {
+    stop: () => {
+      stopped = true;
+      clearInterval(interval);
+      masterGain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.1);
+    },
+  };
+}
+
+function startVibrationLoop(): { stop: () => void } {
+  if (!navigator.vibrate) return { stop: () => {} };
+
+  navigator.vibrate([200, 100, 200, 100, 200]);
+  const interval = setInterval(() => {
+    navigator.vibrate([200, 100, 200, 100, 200]);
+  }, 2000);
+
+  return {
+    stop: () => {
+      clearInterval(interval);
+      navigator.vibrate(0);
+    },
+  };
 }
 
 export function TimerToast({ message, onDismiss }: TimerToastProps) {
   const [visible, setVisible] = useState(false);
+  const alarmRef = useRef<{ stop: () => void } | null>(null);
+  const vibrationRef = useRef<{ stop: () => void } | null>(null);
+  const ctxRef = useRef<AudioContext | null>(null);
+
+  const stopAlarm = useCallback(() => {
+    alarmRef.current?.stop();
+    alarmRef.current = null;
+    vibrationRef.current?.stop();
+    vibrationRef.current = null;
+    if (ctxRef.current) {
+      ctxRef.current.close();
+      ctxRef.current = null;
+    }
+  }, []);
 
   useEffect(() => {
     // Slide in
     requestAnimationFrame(() => setVisible(true));
 
-    // Play chime + vibrate
-    playChime();
-    if (navigator.vibrate) {
-      navigator.vibrate([200, 100, 200]);
+    // Start looping alarm + vibration
+    try {
+      const ctx = new AudioContext();
+      ctxRef.current = ctx;
+      alarmRef.current = createAlarmLoop(ctx);
+    } catch {
+      // Audio not available
     }
+    vibrationRef.current = startVibrationLoop();
 
-    // Auto-dismiss after 5s
-    const timer = setTimeout(() => {
-      setVisible(false);
-      setTimeout(onDismiss, 300);
-    }, 5000);
-
-    return () => clearTimeout(timer);
-  }, [onDismiss]);
+    return () => stopAlarm();
+  }, [stopAlarm]);
 
   const handleClick = (e: React.MouseEvent) => {
     e.stopPropagation();
+    stopAlarm();
     setVisible(false);
     setTimeout(onDismiss, 300);
   };
@@ -74,10 +134,11 @@ export function TimerToast({ message, onDismiss }: TimerToastProps) {
     >
       <button
         onClick={handleClick}
-        className="flex items-center gap-2 rounded-full bg-[#7C9070] px-5 py-3 text-sm font-semibold text-white shadow-lg"
+        className="flex animate-pulse items-center gap-2 rounded-full bg-[#7C9070] px-5 py-3 text-sm font-semibold text-white shadow-lg"
       >
         <Timer className="size-4" />
         {message}
+        <span className="text-xs font-normal opacity-80">Tap to dismiss</span>
       </button>
     </div>
   );

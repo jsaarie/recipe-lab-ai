@@ -10,12 +10,23 @@ interface RecipeInputProps {
   onRecipeParsed: (recipe: ParsedRecipe, source: "structured" | "ai") => void;
   onLoading: (loading: boolean) => void;
   onStepIngredientsMapped?: (si: StepIngredient[][] | null) => void;
+  onError?: (error: string) => void;
 }
 
-export function RecipeInput({ compact, onRecipeParsed, onLoading, onStepIngredientsMapped }: RecipeInputProps) {
+export function RecipeInput({ compact, onRecipeParsed, onLoading, onStepIngredientsMapped, onError }: RecipeInputProps) {
   const [url, setUrl] = useState("");
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
+
+  function setErrorWithCallback(msg: string) {
+    setError(msg);
+    onError?.(msg);
+  }
+
+  function clearError() {
+    setError("");
+    onError?.("");
+  }
 
   function validateUrl(value: string): boolean {
     try {
@@ -28,15 +39,15 @@ export function RecipeInput({ compact, onRecipeParsed, onLoading, onStepIngredie
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
-    setError("");
+    clearError();
 
     const trimmed = url.trim();
     if (!trimmed) {
-      setError("Please enter a recipe URL.");
+      setErrorWithCallback("Please enter a recipe URL.");
       return;
     }
     if (!validateUrl(trimmed)) {
-      setError("Please enter a valid URL (e.g. https://example.com/recipe).");
+      setErrorWithCallback("Please enter a valid URL (e.g. https://example.com/recipe).");
       return;
     }
 
@@ -53,10 +64,11 @@ export function RecipeInput({ compact, onRecipeParsed, onLoading, onStepIngredie
       const data = await res.json();
 
       if (!res.ok) {
-        setError(data.error || "Failed to extract recipe.");
+        setErrorWithCallback(data.error || "Failed to extract recipe.");
         return;
       }
 
+      clearError();
       const source = data.source || "ai";
       onRecipeParsed(data.recipe, source);
 
@@ -76,7 +88,7 @@ export function RecipeInput({ compact, onRecipeParsed, onLoading, onStepIngredie
           .catch(() => onStepIngredientsMapped(null));
       }
     } catch {
-      setError("Something went wrong. Please try again.");
+      setErrorWithCallback("Something went wrong. Please try again.");
     } finally {
       setLoading(false);
       onLoading(false);
@@ -92,7 +104,7 @@ export function RecipeInput({ compact, onRecipeParsed, onLoading, onStepIngredie
           value={url}
           onChange={(e) => {
             setUrl(e.target.value);
-            if (error) setError("");
+            if (error) clearError();
           }}
           className={`rounded-full border-neutral-200 bg-white text-neutral-700 shadow-sm placeholder:text-neutral-400 focus-visible:ring-[#7C9070]/40 ${compact ? "h-10 pl-4 pr-4 text-sm sm:h-11 sm:pr-20" : "h-14 pl-5 pr-4 text-base sm:h-16 sm:pl-7 sm:pr-32 sm:text-lg"}`}
         />
@@ -127,7 +139,7 @@ export function RecipeInput({ compact, onRecipeParsed, onLoading, onStepIngredie
         </Button>
       </form>
 
-      {error && (
+      {error && !compact && (
         <p className="text-center text-sm text-red-500">{error}</p>
       )}
     </div>

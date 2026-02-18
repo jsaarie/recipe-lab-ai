@@ -149,6 +149,187 @@ Provider is selected via environment variable `AI_PROVIDER=claude|openai`.
 
 ---
 
+## Feature: Kitchen Psychology — Adaptive Lab HUD (v0.5)
+
+### Overview
+
+The Lab HUD adapts its information hierarchy and layout density to match the psychological demands of the recipe being cooked. Someone making cookies operates in a precise, sequential mindset. Someone making a stir-fry is managing heat, speed, and concurrency. The UI should reflect that energy — not just display the same layout for every recipe.
+
+Classification happens at parse time (single AI call, zero extra latency) and produces a `cookingMode` field on the recipe. The Lab HUD reads this field and renders a mode-specific layout variant.
+
+---
+
+### Cooking Archetypes
+
+| Mode | Examples | Core Demand | Timer Role | Ingredient Role |
+|------|----------|-------------|------------|-----------------|
+| **Precision** | Baking, pastry, candy | Accuracy and order | Low — steps must be checked before advancing | Dominant — prominent checklist per step |
+| **Fire & Speed** | Stir-fry, sauté, sear | Urgency and heat management | Critical — large, at the top of the step | Minimal — just-in-time per step, compact |
+| **Low & Slow** | Braise, roast, sous vide | Patience and time awareness | Ambient — displayed but not urgent | Low — set up at the start, then hands-off |
+| **Assembly** | Salads, sushi, sandwiches, charcuterie | Organization and mise en place | None | High — all ingredients visible at once, checklist style |
+| **Simmer & Build** | Soups, stews, pasta sauces, curries | Layered additions over time | Moderate — one or two key timers | Staged — ingredients appear per phase |
+
+---
+
+### Data Model
+
+`cookingMode` is added to `ParsedRecipe`, extracted during the existing parse call alongside all other fields.
+
+```typescript
+type CookingMode =
+  | "precision"
+  | "fire-and-speed"
+  | "low-and-slow"
+  | "assembly"
+  | "simmer-and-build";
+
+interface ParsedRecipe {
+  // ... existing fields ...
+  cookingMode: CookingMode;
+}
+```
+
+If the AI cannot confidently classify the recipe, it defaults to `"simmer-and-build"` as the neutral fallback.
+
+---
+
+### AI Classification
+
+Added to the existing parse prompt (no second call, no extra latency). The AI is given the five archetype names with brief descriptions and asked to return the best match as a single string value.
+
+**Classification guidance given to the AI:**
+- `precision` — recipe depends on exact measurements, temperatures, or chemical reactions (baking, pastry, confectionery)
+- `fire-and-speed` — recipe involves high heat with short, time-critical steps that cannot be paused (stir-fry, searing, flash-cooking)
+- `low-and-slow` — recipe has a long unattended cook phase; the cook's role is primarily setup then waiting (braising, roasting, slow cooking)
+- `assembly` — recipe is primarily combining pre-prepared ingredients with little or no active cooking (salads, cold dishes, composed plates)
+- `simmer-and-build` — recipe involves sequential additions to a single vessel over moderate heat (soups, stews, sauces, risotto)
+
+---
+
+### Lab HUD Layout Variants
+
+#### Precision Mode (baking, pastry)
+
+Layout goal: accuracy over speed. The cook needs to verify ingredients before each step and proceed deliberately.
+
+```
+┌─────────────────────────────────┐
+│  Step 3 of 12  ████████░░░░░░  │  ← progress at top
+│                                 │
+│  ☑ 2¼ cups all-purpose flour   │  ← ingredient checklist
+│  ☐ 1 tsp baking soda           │    prominent, expanded
+│  ☐ ½ tsp salt                  │    at top of step
+│                                 │
+│  Whisk dry ingredients together │  ← instruction below
+│  until evenly combined.         │
+│                                 │
+│  [Done — Next Step]            │  ← advance only after checklist
+└─────────────────────────────────┘
+```
+
+- Ingredient checklist rendered above the instruction text (inverted from default)
+- Checklist is expanded by default, not collapsed
+- Each ingredient row is checkable; checked state persists across steps
+- Timer widget shown below instruction, standard size (timers are rare in baking but present)
+
+#### Fire & Speed Mode (stir-fry, sauté)
+
+Layout goal: urgency. The cook cannot afford to search for the timer.
+
+```
+┌─────────────────────────────────┐
+│  Step 4 of 6  ████████████░░░  │
+│                                 │
+│  ┌──────────────────────────┐  │
+│  │  ⏱  02:30               │  │  ← timer large, at top
+│  │  [Tap to start]          │  │    above instruction
+│  └──────────────────────────┘  │
+│                                 │
+│  Add garlic and ginger, toss    │  ← instruction below timer
+│  constantly for 2–3 minutes.    │
+│                                 │
+│  · 4 cloves garlic, minced      │  ← ingredients compact,
+│  · 1 tbsp fresh ginger          │    below instruction
+│                                 │    
+└─────────────────────────────────┘
+```
+
+- Timer widget moved above instruction text and rendered at 1.5× normal size
+- Ingredients displayed below the instruction, compact (no checkboxes), just-in-time per step
+- Layout density is tighter — less vertical padding between elements
+- Background timer pills are more prominent (larger, pinned higher) since concurrency is likely
+
+#### Low & Slow Mode (braise, roast)
+
+Layout goal: patience. Long timers are ambient; the cook knows they have time.
+
+```
+┌─────────────────────────────────┐
+│  Step 2 of 5  ████░░░░░░░░░░░  │
+│                                 │
+│  Place the Dutch oven in the    │  ← instruction prominent
+│  oven at 325°F. Cook for        │    and spacious
+│  2½ hours until fork-tender.   │
+│                                 │
+│  ⏱ 2:30:00  (ambient)          │  ← timer below, smaller,
+│                                 │    subdued style
+└─────────────────────────────────┘
+```
+
+- Standard layout, instruction text is primary
+- Timer rendered below instruction in a quieter, less urgent style (smaller ring, muted color)
+- Ingredients are minimal — most are set up in step 1 (mise en place); subsequent steps have few or none
+- Generous whitespace — the UI feels unhurried
+
+#### Assembly Mode (salads, sushi, composed plates)
+
+Layout goal: organization. All ingredients are needed now; there are no timers.
+
+```
+┌─────────────────────────────────┐
+│  Step 1 of 4  ██░░░░░░░░░░░░░  │
+│                                 │
+│  Mise en place                  │  ← instruction
+│  Prepare and arrange all        │
+│  ingredients before starting.   │
+│                                 │
+│  ☐ 4 cups mixed greens         │  ← full ingredient list
+│  ☐ 1 cup cherry tomatoes       │    visible, checkable
+│  ☐ ½ red onion, thinly sliced  │    all at once
+│  ☐ ¼ cup crumbled feta         │
+│  ☐ 2 tbsp olive oil            │
+│  ☐ 1 tbsp lemon juice          │
+│                                 │
+│  [Done — Next Step]            │
+└─────────────────────────────────┘
+```
+
+- No timer widget rendered (assembly recipes have no cook time)
+- Ingredient checklist is expanded and comprehensive — all ingredients for the recipe (or for the current phase) shown at once
+- Checklist-first layout — ingredients above or alongside instruction
+
+#### Simmer & Build Mode (soups, stews, sauces)
+
+Layout goal: staged additions. The cook adds ingredients in waves; timers are occasional and moderate.
+
+- Default Lab HUD layout (unchanged from current) — this is the neutral baseline
+- Per-step ingredients shown below instruction (current behavior)
+- Timer rendered below ingredients at standard size (current behavior)
+- This mode serves as the fallback when classification is ambiguous
+
+---
+
+### Implementation Notes
+
+- `cookingMode` is read in `LabView` and passed down to child components
+- A `useCookingMode(mode)` hook (or simple switch) returns a config object describing the layout variant for that mode — where timers render, where ingredients render, whether checkboxes show, padding scale
+- No new API calls or AI passes are needed at render time — the mode is determined at parse time
+- The `StepTimer` component accepts a `variant` prop (`"standard" | "prominent" | "ambient"`) controlling its visual scale
+- The `StepIngredients` component accepts a `layout` prop (`"checklist-top" | "compact-inline" | "full-list"`) controlling render position and checkbox visibility
+- All five modes use the same underlying components — only the composition and props differ
+
+---
+
 ## Feature: Smart Ingredients (v0.4)
 
 ### Overview

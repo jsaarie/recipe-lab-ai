@@ -11,6 +11,33 @@ interface LabBannerProps {
   ingredientsLoading?: boolean;
 }
 
+function parseMinutes(value: string): number {
+  // "1 hr 30 min" or "1h 30m"
+  const hrMin = value.match(/(\d+)\s*(?:hr|hour|h)\s*(?:(\d+)\s*(?:min|m))?/i);
+  if (hrMin) return parseInt(hrMin[1]) * 60 + (hrMin[2] ? parseInt(hrMin[2]) : 0);
+  // "45 min" or "45m"
+  const min = value.match(/(\d+)\s*(?:min|m)/i);
+  if (min) return parseInt(min[1]);
+  return 0;
+}
+
+function formatMinutes(total: number): string {
+  if (total <= 0) return "";
+  if (total >= 60) {
+    const h = Math.floor(total / 60);
+    const m = total % 60;
+    return m > 0 ? `${h}h ${m}m` : `${h}h`;
+  }
+  return `${total}m`;
+}
+
+function computeTotalTime(prepTime: string, cookTime: string): string {
+  const prep = parseMinutes(prepTime);
+  const cook = parseMinutes(cookTime);
+  if (prep + cook <= 0) return "";
+  return formatMinutes(prep + cook);
+}
+
 export function LabBanner({ recipe, onEnterLab, ingredientsLoading = false }: LabBannerProps) {
   const [visible, setVisible] = useState(false);
 
@@ -20,7 +47,8 @@ export function LabBanner({ recipe, onEnterLab, ingredientsLoading = false }: La
   }, []);
 
   const stepCount = recipe.instructions.length;
-  const totalTime = recipe.totalTime;
+  const rawTotal = recipe.totalTime || computeTotalTime(recipe.prepTime, recipe.cookTime);
+  const totalTime = rawTotal ? formatMinutes(parseMinutes(rawTotal)) || rawTotal : "";
 
   return (
     <div

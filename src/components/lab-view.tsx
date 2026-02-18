@@ -2,12 +2,13 @@
 
 import { useState, useCallback, useRef, useEffect, useMemo } from "react";
 import { Button } from "@/components/ui/button";
-import { ArrowLeft, ChevronLeft, ChevronRight } from "lucide-react";
+import { ArrowLeft, ChevronLeft, ChevronRight, Lightbulb, LightbulbOff } from "lucide-react";
 import type { ParsedRecipe } from "@/types/recipe";
 import { detectTimer, formatTime } from "@/lib/timer-utils";
 import { StepTimer, type TimerState } from "@/components/step-timer";
 import { TimerToast } from "@/components/timer-toast";
 import { StepIngredients } from "@/components/step-ingredients";
+import { useWakeLock } from "@/lib/use-wake-lock";
 
 interface LabViewProps {
   recipe: ParsedRecipe;
@@ -76,6 +77,13 @@ export function LabView({ recipe, initialStep = 0, onExitLab, onComplete }: LabV
   const [slideDirection, setSlideDirection] = useState<"out-left" | "out-right" | "in-right" | "in-left" | null>(null);
   const [showArrows, setShowArrows] = useState(true);
   const arrowTimer = useRef<ReturnType<typeof setTimeout>>(null);
+
+  // Keep screen awake while in Lab mode
+  const wakeLock = useWakeLock();
+
+  useEffect(() => {
+    wakeLock.request();
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   const steps = recipe.instructions;
   const totalSteps = steps.length;
@@ -271,7 +279,22 @@ export function LabView({ recipe, initialStep = 0, onExitLab, onComplete }: LabV
           <h1 className="flex-1 truncate text-center text-sm font-semibold text-neutral-700 px-4">
             {recipe.title}
           </h1>
-          <div className="w-5" />
+          {wakeLock.isSupported ? (
+            <button
+              onClick={wakeLock.toggle}
+              className={`flex items-center transition-colors ${
+                wakeLock.isActive
+                  ? "text-[#7C9070]"
+                  : "text-neutral-400 hover:text-neutral-600"
+              }`}
+              aria-label={wakeLock.isActive ? "Disable screen wake lock" : "Enable screen wake lock"}
+              title={wakeLock.isActive ? "Screen staying awake" : "Screen may sleep"}
+            >
+              {wakeLock.isActive ? <Lightbulb className="size-5" /> : <LightbulbOff className="size-5" />}
+            </button>
+          ) : (
+            <div className="w-5" />
+          )}
         </div>
       </header>
 

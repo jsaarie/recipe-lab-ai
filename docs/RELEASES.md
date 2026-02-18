@@ -4,6 +4,27 @@ This document tracks each production deployment, including the version, release 
 
 ---
 
+## V0.4.1 — Polish & Bug Fixes
+
+**Date:** 2026-02-18
+
+### Features
+
+- Wake lock toggle in Lab HUD header: keeps screen awake while cooking; Lightbulb icon shows active/inactive state (auto-requested on Lab entry)
+- Lab Complete screen: swipe-right and left-tap-zone navigate back to the last step; slide-in animation on enter; edge arrow hint (fades after 3s); "Back to Last Step" button on desktop
+- Looping timer alarm: three-tone chime repeats every 2s until dismissed; vibration pattern loops in sync; toast now pulses with "Tap to dismiss" label; no more 5s auto-dismiss
+
+### Bug Fixes
+
+- API now rejects pages that return no title, ingredients, or instructions (422) with a clear "No recipe found" message
+- Error messages from recipe parsing are now lifted to `HomePage` state so they survive `RecipeInput` remounts during loading — errors no longer vanish after the loading spinner
+- Fixed "page reload" visual glitch on S4: removed `!loading` from recipe view condition so the recipe card no longer unmounts while a new URL is being fetched
+- Cook time values over 60 min now display as `1h 30m` instead of raw "90 min" across both the Recipe Card MetaPills and Lab Banner
+- Lab Banner now falls back to `prepTime + cookTime` when `totalTime` is missing from the parsed recipe
+- Lab Banner and Recipe Card time values are consistently formatted to abbreviated form (`1h`, `45m`, `1h 30m`)
+
+---
+
 ## V0.4 — Smart Ingredients
 
 **Date:** 2026-02-16

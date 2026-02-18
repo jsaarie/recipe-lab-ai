@@ -3,12 +3,34 @@
 import { useState, type ReactNode } from "react";
 import type { ParsedRecipe } from "@/types/recipe";
 
+function formatDuration(value: string): string {
+  // Try to parse a numeric minute value from strings like "90 min", "120 minutes", "90m"
+  const minMatch = value.match(/^(\d+)\s*(?:min(?:utes?)?|m)$/i);
+  if (minMatch) {
+    const total = parseInt(minMatch[1]);
+    if (total >= 60) {
+      const h = Math.floor(total / 60);
+      const m = total % 60;
+      return m > 0 ? `${h}h ${m}m` : `${h}h`;
+    }
+    return `${total}m`;
+  }
+  // Already formatted like "1 hr 30 min" — abbreviate
+  const hrMinMatch = value.match(/^(\d+)\s*(?:hr|hour)s?\s*(?:(\d+)\s*(?:min(?:utes?)?|m))?$/i);
+  if (hrMinMatch) {
+    const h = parseInt(hrMinMatch[1]);
+    const m = hrMinMatch[2] ? parseInt(hrMinMatch[2]) : 0;
+    return m > 0 ? `${h}h ${m}m` : `${h}h`;
+  }
+  return value;
+}
+
 function MetaPill({ label, value }: { label: string; value: string }) {
   if (!value) return null;
   return (
     <span className="inline-flex items-center gap-1 rounded-full bg-[#7C9070]/10 px-2.5 py-1 text-xs text-[#5A6B50] sm:gap-1.5 sm:px-3 sm:text-sm">
       <span className="font-medium">{label}</span>
-      <span className="text-neutral-500">{value}</span>
+      <span className="text-neutral-500">{formatDuration(value)}</span>
     </span>
   );
 }

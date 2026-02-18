@@ -15,6 +15,7 @@ export function HomePage() {
   const [recipeSource, setRecipeSource] = useState<"structured" | "ai">("structured");
   const [loading, setLoading] = useState(false);
   const [ingredientsLoading, setIngredientsLoading] = useState(false);
+  const [parseError, setParseError] = useState("");
   const [view, setView] = useState<View>("recipe");
   const [labStep, setLabStep] = useState(0);
 
@@ -44,11 +45,16 @@ export function HomePage() {
   }, []);
 
   const handleLabComplete = useCallback(() => {
+    setLabStep(recipe ? recipe.instructions.length - 1 : 0);
     setView("complete");
-  }, []);
+  }, [recipe]);
 
   const handleViewRecipe = useCallback(() => {
     setView("recipe");
+  }, []);
+
+  const handleBackToLastStep = useCallback(() => {
+    setView("lab");
   }, []);
 
   const handleCookAnother = useCallback(() => {
@@ -76,6 +82,7 @@ export function HomePage() {
         recipe={recipe}
         onViewRecipe={handleViewRecipe}
         onCookAnother={handleCookAnother}
+        onBackToLastStep={handleBackToLastStep}
       />
     );
   }
@@ -98,16 +105,21 @@ export function HomePage() {
               onRecipeParsed={handleRecipeParsed}
               onLoading={setLoading}
               onStepIngredientsMapped={handleStepIngredientsMapped}
+              onError={setParseError}
             />
-            <p className="text-center text-sm text-neutral-400">
-              Paste any recipe URL to remove the clutter and get straight to the kitchen.
-            </p>
+            {parseError ? (
+              <p className="text-center text-sm text-red-500">{parseError}</p>
+            ) : (
+              <p className="text-center text-sm text-neutral-400">
+                Paste any recipe URL to remove the clutter and get straight to the kitchen.
+              </p>
+            )}
           </div>
         </div>
       )}
 
       {/* Loading state: centered */}
-      {loading && (
+      {!hasRecipe && loading && (
         <div className="flex flex-1 flex-col items-center justify-center gap-6">
           <h1 className="text-2xl font-bold tracking-tight text-neutral-700">
             Recipe Lab <span className="text-[#7C9070]">AI</span>
@@ -138,7 +150,7 @@ export function HomePage() {
       )}
 
       {/* Recipe state: compact input at top, banner, recipe below */}
-      {hasRecipe && !loading && view === "recipe" && (
+      {hasRecipe && view === "recipe" && (
         <>
           <header className="sticky top-0 z-10 w-full border-b border-neutral-200 bg-[#FAF8F5]/95 px-3 py-3 backdrop-blur-sm">
             <div className="mx-auto flex max-w-2xl flex-col items-center gap-2 sm:flex-row sm:gap-4">
@@ -150,9 +162,15 @@ export function HomePage() {
                 onRecipeParsed={handleRecipeParsed}
                 onLoading={setLoading}
                 onStepIngredientsMapped={handleStepIngredientsMapped}
+                onError={setParseError}
               />
             </div>
           </header>
+          {parseError && (
+            <div className="w-full max-w-2xl mx-auto px-4 pt-4">
+              <p className="text-center text-sm text-red-500">{parseError}</p>
+            </div>
+          )}
           <main className="w-full max-w-2xl px-1 py-6 sm:py-10 space-y-6">
             <RecipeCard
               recipe={recipe}
