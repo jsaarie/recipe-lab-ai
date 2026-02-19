@@ -10,7 +10,9 @@ export async function scrapeRecipePage(url: string): Promise<ScrapeResult> {
   const res = await fetch(url, {
     headers: {
       "User-Agent":
-        "Mozilla/5.0 (compatible; RecipeLabAI/1.0; +https://recipe-lab-ai.vercel.app)",
+        "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36",
+      "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
+      "Accept-Language": "en-US,en;q=0.9",
     },
     signal: AbortSignal.any([abort.signal, AbortSignal.timeout(10000)]),
   });
@@ -42,8 +44,8 @@ export async function scrapeRecipePage(url: string): Promise<ScrapeResult> {
         }
       }
 
-      // Cap download at 250KB — enough for any raw-text AI path
-      if (buffer.length > 250_000) {
+      // Cap download at 500KB — some sites (Food Network) embed JSON-LD near the end
+      if (buffer.length > 500_000) {
         abort.abort();
         break;
       }
@@ -182,7 +184,8 @@ function parseInstructions(raw: unknown): string[] {
           return obj.itemListElement
             .map((sub: unknown) => {
               if (sub && typeof sub === "object") {
-                return (sub as Record<string, unknown>).text;
+                const t = (sub as Record<string, unknown>).text;
+                return typeof t === "string" ? cleanText(t) : null;
               }
               return null;
             })
@@ -197,8 +200,8 @@ function parseInstructions(raw: unknown): string[] {
 
 function parseDuration(raw: unknown): string {
   if (typeof raw !== "string") return "";
-  // ISO 8601 duration: PT1H30M, PT45M, PT2H
-  const match = raw.match(/^PT(?:(\d+)H)?(?:(\d+)M)?(?:(\d+)S)?$/i);
+  // Full ISO 8601 duration: P0Y0M0DT0H20M0.000S or PT1H30M
+  const match = raw.match(/P(?:\d+Y)?(?:\d+M)?(?:\d+D)?T(?:(\d+)H)?(?:(\d+)M)?(?:[\d.]+S)?/i);
   if (!match) return raw;
 
   const hours = parseInt(match[1] || "0");
@@ -241,11 +244,14 @@ function findRecipeObjects(data: unknown): unknown[] {
   return [];
 }
 
-/** Replace non-breaking spaces, zero-width chars, HTML entities, and collapse whitespace */
+/** Decode HTML entities, replace non-breaking spaces, zero-width chars, and collapse whitespace */
 function cleanText(text: string): string {
-  return text
-    .replace(/&nbsp;/gi, " ")
-    .replace(/&#160;/g, " ")
+  // Decode HTML entities (&#39; &amp; &#8212; &frac12; etc.) via cheerio
+  let decoded = text;
+  if (/&[#a-z0-9]+;/i.test(decoded)) {
+    decoded = cheerio.load(`<p>${decoded}</p>`, null, false)("p").text();
+  }
+  return decoded
     .replace(/[\u00a0\u200b\u200c\u200d\ufeff]/g, " ")
     .replace(/\s+/g, " ")
     .trim();
