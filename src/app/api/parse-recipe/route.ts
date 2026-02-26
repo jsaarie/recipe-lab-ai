@@ -66,10 +66,15 @@ export async function POST(req: NextRequest) {
     const isTimeout =
       err instanceof Error &&
       (err.name === "TimeoutError" || err.name === "AbortError");
+    // Treat any failed fetch as potentially blocked — Browserless can handle it.
+    // Only skip Browserless for clear "URL doesn't exist" signals (404, DNS fail).
+    const isHardFail =
+      message.includes("404") ||
+      message.includes("ENOTFOUND") ||
+      message.includes("Invalid URL");
     const isBlocked =
       isTimeout ||
-      (message.includes("Failed to fetch page") &&
-        ["403", "429", "407"].some((code) => message.includes(code)));
+      (message.includes("Failed to fetch page") && !isHardFail);
 
     // Tier 2: Browserless — handles Cloudflare bot protection
     if (isBlocked && process.env.BROWSERLESS_API_KEY) {
