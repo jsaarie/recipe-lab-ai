@@ -11,10 +11,17 @@ export async function scrapeRecipePage(url: string): Promise<ScrapeResult> {
     headers: {
       "User-Agent":
         "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36",
-      "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
+      "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,*/*;q=0.8",
       "Accept-Language": "en-US,en;q=0.9",
+      "Accept-Encoding": "gzip, deflate, br",
+      "Cache-Control": "no-cache",
+      "Pragma": "no-cache",
+      "Sec-Fetch-Dest": "document",
+      "Sec-Fetch-Mode": "navigate",
+      "Sec-Fetch-Site": "none",
+      "Upgrade-Insecure-Requests": "1",
     },
-    signal: AbortSignal.any([abort.signal, AbortSignal.timeout(10000)]),
+    signal: AbortSignal.any([abort.signal, AbortSignal.timeout(8000)]),
   });
 
   if (!res.ok) {
@@ -55,6 +62,44 @@ export async function scrapeRecipePage(url: string): Promise<ScrapeResult> {
   }
 
   return extractRawContent(buffer, url);
+}
+
+/** Fetch a page via Browserless /unblock — handles Cloudflare bot protection. */
+export async function scrapeWithBrowserless(url: string): Promise<ScrapeResult> {
+  const apiKey = process.env.BROWSERLESS_API_KEY;
+  if (!apiKey) throw new Error("BROWSERLESS_API_KEY not configured");
+
+  const res = await fetch(
+    `https://production-sfo.browserless.io/unblock?token=${apiKey}`,
+    {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        url,
+        browserWSEndpoint: false,
+        cookies: true,
+        content: true,
+        screenshot: false,
+        gotoOptions: { waitUntil: "networkidle2", timeout: 25000 },
+      }),
+      signal: AbortSignal.timeout(30000),
+    }
+  );
+
+  if (!res.ok) throw new Error(`Browserless error: ${res.status} ${res.statusText}`);
+
+  const data = await res.json() as { content?: string };
+  const html = data.content;
+  if (!html) throw new Error("Browserless returned no content");
+
+  return parseHtml(html, url);
+}
+
+/** Parse already-fetched HTML (e.g. sent from the browser as a fallback). */
+function parseHtml(html: string, url: string): ScrapeResult {
+  const structured = tryExtractStructured(html, url);
+  if (structured) return structured;
+  return extractRawContent(html, url);
 }
 
 function tryExtractStructured(html: string, url: string): ScrapeResult | null {

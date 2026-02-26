@@ -4,12 +4,8 @@ import { useState, useEffect, useCallback, useRef } from "react";
 
 export function useWakeLock() {
   const [isActive, setIsActive] = useState(false);
-  const [isSupported, setIsSupported] = useState(false);
+  const [isSupported] = useState(() => "wakeLock" in navigator);
   const wakeLockRef = useRef<WakeLockSentinel | null>(null);
-
-  useEffect(() => {
-    setIsSupported("wakeLock" in navigator);
-  }, []);
 
   const request = useCallback(async () => {
     if (!("wakeLock" in navigator)) return;

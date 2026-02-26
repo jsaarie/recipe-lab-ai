@@ -8,7 +8,7 @@ Recipe Lab AI is a web app that takes a recipe URL and parses it into a clean, s
 
 - **Framework**: Next.js 15 (App Router) with TypeScript
 - **Styling**: Tailwind CSS v4 + shadcn/ui
-- **AI**: Claude API + OpenAI API (abstracted behind a provider interface)
+- **AI**: Gemini
 - **Database**: MongoDB (post-MVP, not used yet)
 - **Deployment**: Vercel
 - **Package Manager**: pnpm
@@ -26,7 +26,7 @@ pnpm type-check   # Run TypeScript compiler check
 
 - `src/app/` — Next.js App Router pages and API routes
 - `src/components/` — React components (ui/ for shadcn, feature components at root)
-- `src/lib/ai/` — AI provider abstraction (Claude, OpenAI, shared prompts)
+- `src/lib/ai/` — Gemini integration and recipe extraction logic
 - `src/lib/` — Utilities, scraper, validators
 - `src/types/` — TypeScript type definitions
 - `docs/` — Product docs (PRD, features, architecture)
@@ -36,17 +36,18 @@ pnpm type-check   # Run TypeScript compiler check
 - Use `pnpm` for all package operations
 - Use the App Router (`src/app/`), not Pages Router
 - Components use named exports
-- AI provider logic lives in `src/lib/ai/` with a common interface
+- Gemini integration in `src/lib/ai/gemini.ts`
 - Validate AI responses with Zod schemas
-- Keep the MVP stateless — no database, no auth
 - Mobile-first responsive design
 
 ## Environment Variables
 
 Copy `.env.example` to `.env.local` and fill in:
-- `AI_PROVIDER` — `claude` or `openai`
-- `ANTHROPIC_API_KEY` — for Claude
-- `OPENAI_API_KEY` — for OpenAI
+
+```bash
+GEMINI_API_KEY=           # Required — Google Gemini API key
+BROWSERLESS_API_KEY=      # Optional — enables Cloudflare bypass via Browserless.io
+```
 
 ## Documentation
 

@@ -4,6 +4,26 @@ This document tracks each production deployment, including the version, release 
 
 ---
 
+## V0.5 — Scraper Waterfall & Browser Extension
+
+**Date:** 2026-02-25
+
+### Features
+
+- Three-tier scraping waterfall for bot-protected recipe sites:
+  1. **Direct fetch** — fast, free, works for ~70% of sites
+  2. **Browserless.io fallback** — triggered on 403/429/timeout; routes through a hosted Chromium that handles Cloudflare bot protection automatically (free tier: 1,000 units/month)
+  3. **Extension prompt** — shown as last resort when Browserless is unconfigured or also fails
+- Browser extension (`extension/`) for manual scraping of any blocked site:
+  - Toolbar button grabs the current tab's full rendered HTML and opens it in Recipe Lab
+  - MV3 manifest; compatible with Chrome, Edge, Arc, Brave (load unpacked from `extension/`)
+  - Placeholder icons in Recipe Lab green; swap for real assets before publishing
+- `BROWSERLESS_API_KEY` env var wires up the Browserless fallback (optional — app degrades gracefully without it)
+- Scraper timeout raised from 5s → 8s so Cloudflare has time to return a 403 before the connection is aborted
+- Timeout/AbortError now correctly detected as a blocked signal (Cloudflare often hangs rather than rejecting)
+
+---
+
 ## V0.4.1 — Polish & Bug Fixes
 
 **Date:** 2026-02-18
@@ -33,7 +53,7 @@ This document tracks each production deployment, including the version, release 
 
 - Per-step ingredient mapping: each Lab HUD step now highlights the ingredients needed for that step
   - AI maps ingredients to steps using index-based response schema (low-latency, minimal tokens)
-  - Gemini 2.5 Flash primary with Claude Haiku fallback
+  - Powered by Gemini 2.5 Flash
 - Optimistic UI: recipe page loads immediately (~300ms), Cook button unlocks in the background (~1s) once ingredient mapping completes
   - LabBanner shows "Mapping ingredients…" spinner while loading; Cook button disabled until ready
 - Streaming HTML scraper: download aborted as soon as JSON-LD Recipe block is fully received (saves 60–65% of HTML download for structured-data sites)

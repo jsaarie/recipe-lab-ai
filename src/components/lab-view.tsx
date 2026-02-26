@@ -181,18 +181,15 @@ export function LabView({ recipe, initialStep = 0, onExitLab, onComplete }: LabV
   }, [timers, currentStep]);
 
   // Fade arrows after 3 seconds, reset on step change
-  const resetArrowTimer = useCallback(() => {
+  useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     setShowArrows(true);
     if (arrowTimer.current) clearTimeout(arrowTimer.current);
     arrowTimer.current = setTimeout(() => setShowArrows(false), 3000);
-  }, []);
-
-  useEffect(() => {
-    resetArrowTimer();
     return () => {
       if (arrowTimer.current) clearTimeout(arrowTimer.current);
     };
-  }, [currentStep, resetArrowTimer]);
+  }, [currentStep]);
 
   const advanceStep = useCallback(() => {
     if (isLastStep) {

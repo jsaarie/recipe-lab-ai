@@ -23,7 +23,7 @@ The MVP focuses on a single, well-executed feature:
 ### What MVP Includes
 
 - Single-page app with a URL input field
-- AI-powered recipe extraction and parsing from any URL
+- AI-powered recipe extraction from any URL using Gemini 2.5 Flash
 - Clean, structured recipe display with:
   - Recipe title and source attribution
   - Prep time, cook time, total time, servings
@@ -52,7 +52,6 @@ The roadmap is centered around **The Lab** — a guided cooking HUD that takes u
 | v0.2 | Lab Foundation | Cooking HUD entry point ("Cook" button), full-screen single-step view with large Next/Back tap targets, collapsible mini-overview strip for step jumping, progress indicator (Step N of M) |
 | v0.3 | Timers | Optional user-triggered step timers, up to 3 concurrent timers in a visible timer tray, audio/visual alerts on completion |
 | v0.4 | Smart Ingredients | AI-powered per-step ingredient mapping shown in the HUD, expandable full ingredient list panel |
-| v0.5 | Kitchen Psychology | AI classifies each recipe into a cooking archetype (Precision, Fire & Speed, Low & Slow, Assembly, Simmer & Build) at parse time; the Lab HUD adapts its information hierarchy and layout density to match the energy and cognitive demands of that style of cooking |
 | v1.0 | The Lab Complete | Fully integrated guided cooking experience — confirm a recipe, enter the Lab, cook step-by-step with per-step ingredients, timers, and seamless recipe/Lab switching |
 
 ### Post-V1.0 Horizon

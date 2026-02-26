@@ -1,6 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
 import { mapStepIngredients as mapWithGemini } from "@/lib/ai/gemini";
-import { mapStepIngredients as mapWithClaude } from "@/lib/ai/claude";
 import { mapIngredientsInputSchema } from "@/lib/schema";
 
 export async function POST(req: NextRequest) {
@@ -12,11 +11,7 @@ export async function POST(req: NextRequest) {
     try {
       stepIngredients = await mapWithGemini(recipe) ?? null;
     } catch {
-      try {
-        stepIngredients = await mapWithClaude(recipe) ?? null;
-      } catch {
-        // Both failed — return null, client degrades gracefully
-      }
+      // Failed — return null, client degrades gracefully
     }
 
     return NextResponse.json({ stepIngredients });

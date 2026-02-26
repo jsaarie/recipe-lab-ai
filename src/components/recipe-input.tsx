@@ -68,6 +68,14 @@ export function RecipeInput({ compact, onRecipeParsed, onLoading, onStepIngredie
         return;
       }
 
+      // Blocked even after Browserless fallback — prompt the extension as last resort
+      if (data.blocked) {
+        setErrorWithCallback(
+          "This site blocks automated access. Install the Recipe Lab extension and click its icon while on that page."
+        );
+        return;
+      }
+
       clearError();
       const source = data.source || "ai";
       onRecipeParsed(data.recipe, source);
