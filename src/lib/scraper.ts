@@ -80,9 +80,9 @@ export async function scrapeWithBrowserless(url: string): Promise<ScrapeResult> 
         cookies: true,
         content: true,
         screenshot: false,
-        gotoOptions: { waitUntil: "networkidle2", timeout: 25000 },
+        gotoOptions: { waitUntil: "networkidle2", timeout: 20000 },
       }),
-      signal: AbortSignal.timeout(30000),
+      signal: AbortSignal.timeout(25000),
     }
   );
 
