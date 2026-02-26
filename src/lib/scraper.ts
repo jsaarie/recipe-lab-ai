@@ -80,7 +80,7 @@ export async function scrapeWithBrowserless(url: string): Promise<ScrapeResult> 
         cookies: true,
         content: true,
         screenshot: false,
-        gotoOptions: { waitUntil: "networkidle2", timeout: 20000 },
+        gotoOptions: { waitUntil: "load", timeout: 20000 },
       }),
       signal: AbortSignal.timeout(25000),
     }
@@ -90,6 +90,7 @@ export async function scrapeWithBrowserless(url: string): Promise<ScrapeResult> 
 
   const data = await res.json() as { content?: string };
   const html = data.content;
+  console.log(`[Browserless] html length: ${html?.length ?? 0}, has ld+json: ${html?.includes("application/ld+json")}`);
   if (!html) throw new Error("Browserless returned no content");
 
   return parseHtml(html, url);
