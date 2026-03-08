@@ -99,7 +99,7 @@ export function LabComplete({ recipe, servings, ingredientSwaps, unitSystem, onV
 
   return (
     <div
-      className="relative flex min-h-screen flex-col items-center justify-center bg-[#FAF8F5] px-4"
+      className="relative flex min-h-screen flex-col items-center justify-center bg-background px-4"
       onClick={handleTapZone}
       onTouchStart={onTouchStart}
       onTouchEnd={onTouchEnd}
@@ -110,20 +110,20 @@ export function LabComplete({ recipe, servings, ingredientSwaps, unitSystem, onV
           showArrow ? "opacity-40" : "opacity-0"
         }`}
       >
-        <ChevronLeft className="size-8 text-neutral-400" />
+        <ChevronLeft className="size-8 text-warm-400" />
       </div>
 
       <div
         className={`w-full max-w-sm text-center space-y-6 transition-all duration-200 ease-out ${slideClass}`}
       >
         <div className="space-y-2">
-          <h1 className="text-3xl font-bold text-[#7C9070]">
+          <h1 className="font-serif text-3xl font-bold text-primary">
             Enjoy!
           </h1>
-          <p className="text-lg font-semibold text-neutral-700">
+          <p className="text-lg font-semibold text-warm-700">
             {recipe.title}
           </p>
-          <p className="text-sm text-neutral-500">
+          <p className="text-sm text-warm-500">
             {stepCount} {stepCount === 1 ? "step" : "steps"} completed
           </p>
         </div>
@@ -131,7 +131,7 @@ export function LabComplete({ recipe, servings, ingredientSwaps, unitSystem, onV
         <div className="space-y-3 pt-4">
           <Button
             onClick={(e) => { e.stopPropagation(); onViewRecipe(); }}
-            className="h-12 w-full rounded-full bg-[#7C9070] text-base font-semibold text-white shadow-sm hover:bg-[#6B7F60]"
+            className="h-12 w-full rounded-full bg-primary text-base font-semibold text-white shadow-sm hover:bg-sage-500"
           >
             <BookOpen className="size-5" />
             View Full Recipe
@@ -140,7 +140,7 @@ export function LabComplete({ recipe, servings, ingredientSwaps, unitSystem, onV
             onClick={handleSave}
             disabled={saving || saved}
             variant="outline"
-            className="h-12 w-full rounded-full text-base font-semibold text-neutral-600"
+            className="h-12 w-full rounded-full text-base font-semibold text-warm-600"
           >
             {saving ? "Saving…" : saved ? "Saved!" : "Save Recipe"}
           </Button>
@@ -148,7 +148,7 @@ export function LabComplete({ recipe, servings, ingredientSwaps, unitSystem, onV
           <Button
             onClick={(e) => { e.stopPropagation(); goBack(); }}
             variant="outline"
-            className="hidden sm:flex h-12 w-full rounded-full text-base font-semibold text-neutral-600"
+            className="hidden sm:flex h-12 w-full rounded-full text-base font-semibold text-warm-600"
           >
             <ChevronLeft className="size-5" />
             Back to Last Step

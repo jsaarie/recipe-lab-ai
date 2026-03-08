@@ -22,7 +22,7 @@ export function UserNav() {
   }, []);
 
   if (status === "loading") {
-    return <div className="h-8 w-16 rounded-full bg-neutral-200 animate-pulse" />;
+    return <div className="h-8 w-16 rounded-full bg-warm-200 animate-pulse" />;
   }
 
   if (!session) {
@@ -30,13 +30,13 @@ export function UserNav() {
       <div className="flex items-center gap-2">
         <Link
           href="/login"
-          className="text-sm font-medium text-neutral-600 hover:text-neutral-900"
+          className="text-sm font-medium text-warm-600 hover:text-warm-900"
         >
           Sign in
         </Link>
         <Link
           href="/register"
-          className="rounded-full bg-[#7C9070] px-3 py-1.5 text-sm font-medium text-white hover:bg-[#6a7d60] transition-colors"
+          className="rounded-full bg-primary px-3 py-1.5 text-sm font-medium text-white hover:bg-sage-500 transition-colors"
         >
           Sign up
         </Link>
@@ -57,7 +57,7 @@ export function UserNav() {
     <div className="relative" ref={ref}>
       <button
         onClick={() => setOpen((o) => !o)}
-        className="flex h-8 w-8 items-center justify-center rounded-full bg-[#7C9070] text-white text-xs font-semibold hover:bg-[#6a7d60] transition-colors"
+        className="flex h-8 w-8 items-center justify-center rounded-full bg-primary text-white text-xs font-semibold hover:bg-sage-500 active:scale-[0.95] cursor-pointer transition-all"
         aria-label="User menu"
       >
         {session.user.image ? (
@@ -73,17 +73,17 @@ export function UserNav() {
       </button>
 
       {open && (
-        <div className="absolute right-0 top-10 z-50 w-48 rounded-xl border border-neutral-200 bg-white py-1 shadow-lg">
-          <div className="px-3 py-2 border-b border-neutral-100">
-            <p className="text-sm font-medium text-neutral-800 truncate">
+        <div className="absolute right-0 top-10 z-50 w-48 rounded-xl border border-warm-200 bg-white py-1 shadow-lg">
+          <div className="px-3 py-2 border-b border-warm-100">
+            <p className="text-sm font-medium text-warm-800 truncate">
               {session.user.name}
             </p>
-            <p className="text-xs text-neutral-400 truncate">{session.user.email}</p>
+            <p className="text-xs text-warm-400 truncate">{session.user.email}</p>
           </div>
           <Link
             href="/library"
             onClick={() => setOpen(false)}
-            className="flex items-center gap-2 px-3 py-2 text-sm text-neutral-700 hover:bg-neutral-50 transition-colors"
+            className="flex items-center gap-2 px-3 py-2 text-sm text-warm-700 hover:bg-warm-50 transition-colors"
           >
             <BookOpen className="h-4 w-4" />
             My Library
@@ -91,14 +91,14 @@ export function UserNav() {
           <Link
             href="/profile"
             onClick={() => setOpen(false)}
-            className="flex items-center gap-2 px-3 py-2 text-sm text-neutral-700 hover:bg-neutral-50 transition-colors"
+            className="flex items-center gap-2 px-3 py-2 text-sm text-warm-700 hover:bg-warm-50 transition-colors"
           >
             <Settings className="h-4 w-4" />
             Profile
           </Link>
           <button
             onClick={() => signOut({ callbackUrl: "/" })}
-            className="flex w-full items-center gap-2 px-3 py-2 text-sm text-neutral-700 hover:bg-neutral-50 transition-colors"
+            className="flex w-full items-center gap-2 px-3 py-2 text-sm text-warm-700 hover:bg-warm-50 cursor-pointer transition-colors"
           >
             <LogOut className="h-4 w-4" />
             Sign out
@@ -113,7 +113,7 @@ export function UserNav() {
 export function UserNavPlaceholder() {
   return (
     <div className="flex items-center gap-2">
-      <User className="h-4 w-4 text-neutral-400" />
+      <User className="h-4 w-4 text-warm-400" />
     </div>
   );
 }

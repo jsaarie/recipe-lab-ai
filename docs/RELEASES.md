@@ -4,20 +4,13 @@ This document tracks each production deployment, including the version, release 
 
 ---
 
-## V2.3 — Save & Access Recipes *(In Progress)*
+## V2.2.1 — UI Fix
 
-**Date:** TBD
+**Date:** 2026-03-07
 
-### Features
+### Bug Fixes
 
-- "Save Recipe" button on the recipe card (visible when logged in)
-- Saves the current recipe state: parsed recipe, active serving size, ingredient swaps, unit system
-- Duplicate detection by source URL — silently overwrites the existing saved entry
-- `GET /api/library` — lists all saved recipes for the current user (title, source, total time, servings, savedAt)
-- `POST /api/library` — saves or overwrites a recipe for the current user
-- `GET /api/library/[id]` — fetches a single saved recipe with full data
-- `DELETE /api/library/[id]` — deletes a saved recipe
-- `/library` page — dedicated library listing (protected route)
+- Fixed sign in/sign up buttons in the header being unclickable due to an overlapping hero `div` (`-mt-14` on hero content was swallowing pointer events; resolved with `relative z-10` on header)
 
 ---
 
@@ -98,6 +91,12 @@ This document tracks each production deployment, including the version, release 
 - `BROWSERLESS_API_KEY` env var wires up the Browserless fallback (optional — app degrades gracefully without it)
 - Scraper timeout raised from 5s → 8s so Cloudflare has time to return a 403 before the connection is aborted
 - Timeout/AbortError now correctly detected as a blocked signal (Cloudflare often hangs rather than rejecting)
+
+### Bug Fixes (post-release hotfixes, same day)
+
+- Fixed prod timeout: added `vercel.json` with `maxDuration: 60s`; tightened Browserless internal timeouts
+- Fixed blocked detection: any fetch failure now routes to Browserless, not just 403/429
+- Browserless: switched to `waitUntil: "load"` and added content length logging for debugging
 
 ---
 

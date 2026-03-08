@@ -221,9 +221,7 @@ export function useRecipeEditor(recipe: ParsedRecipe, options: RecipeEditorOptio
     });
   }, []);
 
-  const setUnitSystem = useCallback((system: UnitSystem) => {
-    setUnitSystemState(system);
-  }, []);
+  const setUnitSystem = useCallback((system: UnitSystem) => setUnitSystemState(system), []);
 
   const resetAll = useCallback(() => {
     setServingsState(originalServings);

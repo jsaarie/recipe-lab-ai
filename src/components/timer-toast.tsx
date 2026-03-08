@@ -134,7 +134,7 @@ export function TimerToast({ message, onDismiss }: TimerToastProps) {
     >
       <button
         onClick={handleClick}
-        className="flex animate-pulse items-center gap-2 rounded-full bg-[#7C9070] px-5 py-3 text-sm font-semibold text-white shadow-lg"
+        className="flex animate-pulse items-center gap-2 rounded-full bg-primary px-5 py-3 text-sm font-semibold text-white shadow-lg"
       >
         <Timer className="size-4" />
         {message}

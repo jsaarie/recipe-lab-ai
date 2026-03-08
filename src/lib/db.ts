@@ -1,14 +1,18 @@
 import { MongoClient } from "mongodb";
 
 // Lazily instantiated so that builds succeed without MONGODB_URI configured.
-// The client is created on first access and cached for reuse.
+// In serverless environments, we connect on each cold start and cache within
+// the same execution context. The client is replaced if the topology closes.
 
 function createClient(): MongoClient {
   const uri = process.env.MONGODB_URI;
   if (!uri) {
     throw new Error("Missing environment variable: MONGODB_URI");
   }
-  return new MongoClient(uri);
+  return new MongoClient(uri, {
+    serverSelectionTimeoutMS: 10000,
+    socketTimeoutMS: 10000,
+  });
 }
 
 const globalWithMongo = global as typeof globalThis & {
@@ -16,6 +20,15 @@ const globalWithMongo = global as typeof globalThis & {
 };
 
 function getClient(): MongoClient {
+  const existing = globalWithMongo._mongoClient;
+  if (existing) {
+    // Discard if topology is closed/destroyed
+    const topology = (existing as unknown as { topology?: { s?: { state?: string } } }).topology;
+    const state = topology?.s?.state;
+    if (state === "closed" || state === "destroyed") {
+      globalWithMongo._mongoClient = undefined;
+    }
+  }
   if (!globalWithMongo._mongoClient) {
     globalWithMongo._mongoClient = createClient();
   }

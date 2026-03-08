@@ -105,7 +105,7 @@ export function RecipeInput({ compact, onRecipeParsed, onLoading, onStepIngredie
 
   return (
     <div className={`w-full space-y-3 ${compact ? "max-w-xl" : "max-w-xl lg:max-w-none"}`}>
-      <form onSubmit={handleSubmit} className="relative">
+      <form onSubmit={handleSubmit} className="relative input-glow rounded-full transition-shadow">
         <Input
           type="url"
           placeholder="Paste a recipe link..."
@@ -114,12 +114,12 @@ export function RecipeInput({ compact, onRecipeParsed, onLoading, onStepIngredie
             setUrl(e.target.value);
             if (error) clearError();
           }}
-          className={`rounded-full border-neutral-200 bg-white text-neutral-700 shadow-sm placeholder:text-neutral-400 focus-visible:ring-[#7C9070]/40 ${compact ? "h-10 pl-4 pr-4 text-sm sm:h-11 sm:pr-20" : "h-14 pl-5 pr-4 text-base sm:h-16 sm:pl-7 sm:pr-32 sm:text-lg"}`}
+          className={`rounded-full border-warm-200 bg-white text-warm-700 shadow-sm placeholder:text-warm-400 focus-visible:ring-primary/40 ${compact ? "h-10 pl-4 pr-12 text-sm sm:h-11 sm:pr-20" : "h-14 pl-5 pr-14 text-base sm:h-16 sm:pl-7 sm:pr-32 sm:text-lg"}`}
         />
         <Button
           type="submit"
           disabled={loading}
-          className={`absolute top-1/2 -translate-y-1/2 hidden rounded-full bg-[#7C9070] font-semibold text-white shadow-sm hover:bg-[#6B7F60] disabled:opacity-50 sm:inline-flex ${compact ? "right-1.5 h-8 px-4 text-sm" : "right-2 h-12 px-7 text-base"}`}
+          className={`absolute top-1/2 -translate-y-1/2 rounded-full bg-primary font-semibold text-white shadow-sm hover:bg-sage-500 disabled:opacity-50 transition-transform ${compact ? "right-1.5 h-8 w-8 p-0 sm:w-auto sm:px-4 text-sm" : "right-2 h-10 w-10 p-0 sm:h-12 sm:w-auto sm:px-7 text-base"}`}
         >
           {loading ? (
             <svg
@@ -142,7 +142,14 @@ export function RecipeInput({ compact, onRecipeParsed, onLoading, onStepIngredie
               />
             </svg>
           ) : (
-            "Cook"
+            <>
+              {/* Arrow icon on mobile, "Cook" text on desktop */}
+              <svg className="h-4 w-4 sm:hidden" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                <line x1="5" y1="12" x2="19" y2="12" />
+                <polyline points="12 5 19 12 12 19" />
+              </svg>
+              <span className="hidden sm:inline">Cook</span>
+            </>
           )}
         </Button>
       </form>

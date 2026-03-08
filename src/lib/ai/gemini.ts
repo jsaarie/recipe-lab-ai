@@ -58,6 +58,57 @@ export async function extractRecipe(
 }
 
 
+const IMAGE_SYSTEM_PROMPT = `You are a recipe extraction assistant. Given one or two photos of a printed cookbook page, extract the recipe into a structured JSON object.
+
+Rules:
+- Treat all images as pages of a single recipe
+- If a field is not visible in the photos, use an empty string (not null)
+- Keep ingredient quantities, units, and items separate
+- Keep instructions as clear, concise numbered steps
+- Do not invent information not present in the photos
+- For source, use an empty string (the user will fill in the cookbook name)
+- stepIngredients: same rules as always — parallel array to instructions, empty array for steps with no ingredients`;
+
+export async function extractRecipeFromImages(
+  images: { data: string; mimeType: string }[]
+): Promise<ParsedRecipe> {
+  const responseSchema = z.toJSONSchema(parsedRecipeSchema);
+
+  const imageParts = images.map((img) => ({
+    inlineData: { data: img.data, mimeType: img.mimeType },
+  }));
+
+  const response = await ai.models.generateContent({
+    model: "gemini-2.5-flash",
+    contents: [
+      ...imageParts,
+      { text: "Extract the recipe from these cookbook page photo(s)." },
+    ],
+    config: {
+      systemInstruction: IMAGE_SYSTEM_PROMPT,
+      responseMimeType: "application/json",
+      responseSchema,
+      thinkingConfig: { thinkingBudget: 0 },
+    },
+  });
+
+  const text = response.text ?? "";
+  const parsed = JSON.parse(text);
+  parsed.source = "Digitized from photo";
+
+  const validated = parsedRecipeSchema.parse(parsed);
+
+  if (
+    validated.stepIngredients &&
+    validated.stepIngredients.length !== validated.instructions.length
+  ) {
+    validated.stepIngredients = undefined;
+  }
+
+  return validated;
+}
+
+
 const STEP_MAP_PROMPT = `You are a recipe assistant. Given a numbered list of ingredients and instruction steps, return the 1-based indices of the ingredients used in each step.
 
 Rules:

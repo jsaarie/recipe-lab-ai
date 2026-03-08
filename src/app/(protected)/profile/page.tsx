@@ -24,17 +24,40 @@ export default async function ProfilePage() {
 
   if (!user) redirect("/login");
 
+  const initials = ((user.name as string) || "U")
+    .split(" ")
+    .map((w: string) => w[0])
+    .join("")
+    .toUpperCase()
+    .slice(0, 2);
+
   return (
-    <div className="min-h-screen bg-[#FAF8F5]">
-      <header className="sticky top-0 z-10 w-full border-b border-neutral-200 bg-[#FAF8F5]/95 px-3 py-3 backdrop-blur-sm">
-        <div className="mx-auto flex max-w-2xl items-center justify-between">
-          <Link href="/" className="text-lg font-bold text-neutral-700">
-            Recipe Lab <span className="text-[#7C9070]">AI</span>
+    <div className="min-h-screen bg-background">
+      <header className="sticky top-0 z-10 w-full bg-background/95 backdrop-blur-sm">
+        <div className="h-0.5 bg-gradient-to-r from-sage-300/0 via-primary/40 to-sage-300/0" />
+        <div className="mx-auto flex max-w-2xl items-center justify-between px-4 py-3">
+          <Link href="/" className="font-serif text-lg font-bold text-warm-700">
+            Recipe Lab <span className="text-primary">AI</span>
+          </Link>
+          <Link href="/" className="text-sm text-primary hover:underline">
+            Back to kitchen
           </Link>
         </div>
       </header>
-      <main className="mx-auto max-w-2xl px-4 py-8 space-y-4">
-        <h1 className="text-2xl font-bold text-neutral-800">Profile</h1>
+      <main className="mx-auto max-w-2xl px-4 py-8 space-y-6">
+        {/* Profile header with avatar */}
+        <div className="flex items-center gap-4">
+          <div className="flex h-16 w-16 items-center justify-center rounded-full bg-primary/10 text-xl font-semibold text-primary">
+            {initials}
+          </div>
+          <div>
+            <h1 className="font-serif text-2xl font-bold text-warm-800">
+              {user.name as string}
+            </h1>
+            <p className="text-sm text-warm-500">{user.email as string}</p>
+          </div>
+        </div>
+
         <ProfileForm
           initialName={user.name as string}
           initialUnitSystem={(user.defaultUnitSystem as "us" | "metric") ?? "us"}

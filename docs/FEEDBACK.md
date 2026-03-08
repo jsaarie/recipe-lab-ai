@@ -15,6 +15,7 @@ A running list of issues, observations, and improvement notes from human testing
 
 | # | Date | Feature / Area | Feedback | Status | Notes |
 |---|------|----------------|----------|--------|-------|
+| 22 | 2026-03-08 | OCR — Title & Time Casing | Recipe title and time field are returned in ALL CAPS from OCR scans (e.g., "PROSCIUTTO AND PARMESAN TAGLIATELLE", "20 MINUTES") instead of title case / lowercase like URL-scraped recipes. Should normalize casing to match URL scrape output. | open | |
 
 ---
 

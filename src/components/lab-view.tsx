@@ -29,9 +29,9 @@ function ProgressBar({
 
   return (
     <div className="px-4 py-3">
-      <div className="h-1.5 w-full rounded-full bg-neutral-200">
+      <div className="h-1.5 w-full rounded-full bg-warm-200">
         <div
-          className="h-full rounded-full bg-[#7C9070] transition-all duration-500 ease-out"
+          className="h-full rounded-full bg-primary transition-all duration-500 ease-out"
           style={{ width: `${percent}%` }}
         />
       </div>
@@ -255,7 +255,7 @@ export function LabView({ recipe, derivedInstructions, initialStep = 0, onExitLa
   };
 
   return (
-    <div className="flex min-h-screen flex-col bg-[#FAF8F5]">
+    <div className="flex min-h-screen flex-col bg-background">
       {/* Timer Toast */}
       {toastMessage && (
         <TimerToast
@@ -265,16 +265,16 @@ export function LabView({ recipe, derivedInstructions, initialStep = 0, onExitLa
       )}
 
       {/* Lab Header */}
-      <header className="sticky top-0 z-10 border-b border-neutral-200 bg-[#FAF8F5]/95 px-4 py-3 backdrop-blur-sm">
+      <header className="sticky top-0 z-10 border-b border-warm-200 bg-background/95 px-4 py-3 backdrop-blur-sm">
         <div className="mx-auto flex max-w-2xl items-center">
           <button
             onClick={onExitLab}
-            className="flex items-center text-neutral-500 hover:text-neutral-700 transition-colors"
+            className="flex items-center text-warm-500 hover:text-warm-700 transition-colors"
             aria-label="Exit Lab"
           >
             <ArrowLeft className="size-5" />
           </button>
-          <h1 className="flex-1 truncate text-center text-sm font-semibold text-neutral-700 px-4">
+          <h1 className="flex-1 truncate text-center text-sm font-semibold text-warm-700 px-4">
             {recipe.title}
           </h1>
           {wakeLock.isSupported ? (
@@ -282,8 +282,8 @@ export function LabView({ recipe, derivedInstructions, initialStep = 0, onExitLa
               onClick={wakeLock.toggle}
               className={`flex items-center transition-colors ${
                 wakeLock.isActive
-                  ? "text-[#7C9070]"
-                  : "text-neutral-400 hover:text-neutral-600"
+                  ? "text-primary"
+                  : "text-warm-400 hover:text-warm-600"
               }`}
               aria-label={wakeLock.isActive ? "Disable screen wake lock" : "Enable screen wake lock"}
               title={wakeLock.isActive ? "Screen staying awake" : "Screen may sleep"}
@@ -310,7 +310,7 @@ export function LabView({ recipe, derivedInstructions, initialStep = 0, onExitLa
               showArrows ? "opacity-40" : "opacity-0"
             }`}
           >
-            <ChevronLeft className="size-8 text-neutral-400" />
+            <ChevronLeft className="size-8 text-warm-400" />
           </div>
         )}
         {!isLastStep && (
@@ -319,14 +319,14 @@ export function LabView({ recipe, derivedInstructions, initialStep = 0, onExitLa
               showArrows ? "opacity-40" : "opacity-0"
             }`}
           >
-            <ChevronRight className="size-8 text-neutral-400" />
+            <ChevronRight className="size-8 text-warm-400" />
           </div>
         )}
 
         <div className="mx-auto w-full max-w-2xl flex-1 flex flex-col pt-6 sm:pt-10">
           {/* Progress Bar + Step Label */}
           <div className="mb-4 w-full max-w-xs">
-            <p className="px-4 mb-1 text-left text-[10px] font-medium tracking-wide text-neutral-400">
+            <p className="px-4 mb-1 text-left text-[10px] font-medium tracking-wide text-warm-400">
               Step {currentStep + 1} of {totalSteps}
             </p>
             <ProgressBar total={totalSteps} current={currentStep} />
@@ -336,7 +336,7 @@ export function LabView({ recipe, derivedInstructions, initialStep = 0, onExitLa
           <div
             className={`transition-all duration-200 ease-out ${getSlideClass()}`}
           >
-            <p className="text-left text-lg leading-relaxed text-neutral-800 sm:text-xl sm:leading-relaxed">
+            <p className="text-left text-lg leading-relaxed text-warm-800 sm:text-xl sm:leading-relaxed">
               {steps[currentStep]}
             </p>
 
@@ -361,8 +361,8 @@ export function LabView({ recipe, derivedInstructions, initialStep = 0, onExitLa
                     }}
                     className={`flex items-center gap-1.5 rounded-full px-3 py-1.5 text-xs font-medium transition-colors ${
                       state.status === "running"
-                        ? "bg-[#7C9070]/10 text-[#7C9070] animate-pulse"
-                        : "bg-neutral-100 text-neutral-500"
+                        ? "bg-primary/10 text-primary animate-pulse"
+                        : "bg-warm-100 text-warm-500"
                     }`}
                   >
                     Step {step + 1} · {formatTime(state.remaining)}
@@ -386,7 +386,7 @@ export function LabView({ recipe, derivedInstructions, initialStep = 0, onExitLa
           <div className="mt-8 hidden sm:block">
             <Button
               onClick={advanceStep}
-              className="h-12 w-full rounded-full bg-[#7C9070] text-base font-semibold text-white shadow-sm hover:bg-[#6B7F60]"
+              className="h-12 w-full rounded-full bg-primary text-base font-semibold text-white shadow-sm hover:bg-sage-500"
             >
               {isLastStep ? "Finish Recipe" : "Done — Next Step"}
               <ChevronRight className="size-5" />

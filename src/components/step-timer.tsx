@@ -31,9 +31,9 @@ function CircleProgress({
   const offset = CIRCUMFERENCE - (percent / 100) * CIRCUMFERENCE;
 
   const trackColor =
-    status === "finished" ? "stroke-[#7C9070]/20" : "stroke-neutral-200";
+    status === "finished" ? "stroke-primary/20" : "stroke-warm-200";
   const progressColor =
-    status === "finished" ? "stroke-[#7C9070]" : "stroke-[#7C9070]";
+    status === "finished" ? "stroke-primary" : "stroke-primary";
 
   return (
     <svg
@@ -91,7 +91,7 @@ export function StepTimer({ detected, timerState, onStart, onTogglePause }: Step
       <button
         onClick={handleClick}
         disabled={!isActionable}
-        className="flex flex-col items-center gap-3 rounded-2xl p-3 -m-3 transition-colors hover:bg-neutral-100 active:bg-neutral-200 disabled:pointer-events-none"
+        className="flex flex-col items-center gap-3 rounded-2xl p-3 -m-3 transition-colors hover:bg-warm-100 active:bg-warm-200 disabled:pointer-events-none"
       >
         {/* Circle with centered text */}
         <div className="relative">
@@ -99,16 +99,16 @@ export function StepTimer({ detected, timerState, onStart, onTogglePause }: Step
           <div className="absolute inset-0 flex flex-col items-center justify-center">
             {status === "finished" ? (
               <>
-                <Check className="size-6 text-[#7C9070]" />
-                <span className="text-xs font-medium text-[#7C9070]">Done!</span>
+                <Check className="size-6 text-primary" />
+                <span className="text-xs font-medium text-primary">Done!</span>
               </>
             ) : (
               <>
-                <span className="text-xl font-semibold tabular-nums text-neutral-800">
+                <span className="text-xl font-semibold tabular-nums text-warm-800">
                   {formatTime(remaining)}
                 </span>
                 {status === "paused" && (
-                  <span className="text-[10px] font-medium text-neutral-400">Paused</span>
+                  <span className="text-[10px] font-medium text-warm-400">Paused</span>
                 )}
               </>
             )}
@@ -117,19 +117,19 @@ export function StepTimer({ detected, timerState, onStart, onTogglePause }: Step
 
         {/* Label below circle */}
         {status === "idle" && (
-          <div className="flex items-center gap-1.5 rounded-full border border-neutral-300 px-4 py-2 text-sm text-neutral-500">
+          <div className="flex items-center gap-1.5 rounded-full border border-warm-300 px-4 py-2 text-sm text-warm-500">
             <Timer className="size-4" />
             Start Timer
           </div>
         )}
         {status === "running" && (
-          <div className="flex items-center gap-1.5 rounded-full bg-[#7C9070] px-4 py-2 text-sm font-medium text-white shadow-sm">
+          <div className="flex items-center gap-1.5 rounded-full bg-primary px-4 py-2 text-sm font-medium text-white shadow-sm">
             <Pause className="size-3.5" />
             Pause
           </div>
         )}
         {status === "paused" && (
-          <div className="flex items-center gap-1.5 rounded-full border border-[#7C9070]/30 bg-[#7C9070]/5 px-4 py-2 text-sm font-medium text-[#7C9070]">
+          <div className="flex items-center gap-1.5 rounded-full border border-primary/30 bg-primary/5 px-4 py-2 text-sm font-medium text-primary">
             <Play className="size-3.5" />
             Resume
           </div>

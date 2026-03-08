@@ -4,6 +4,7 @@ import { ObjectId } from "mongodb";
 import { z } from "zod";
 import { auth } from "@/auth";
 import client from "@/lib/db";
+import { mfaVerifyLimiter, rateLimitResponse } from "@/lib/rate-limit";
 
 const totp = new TOTP({
   crypto: new NobleCryptoPlugin(),
@@ -27,6 +28,10 @@ export async function POST(req: NextRequest) {
   if (!ObjectId.isValid(session.user.id)) {
     return NextResponse.json({ error: "Invalid session" }, { status: 401 });
   }
+
+  // V-03: Rate limit MFA verification (5 per 15 min per user)
+  const rl = mfaVerifyLimiter.check(session.user.id);
+  if (rl.limited) return rateLimitResponse(rl.retryAfterMs);
 
   const body = await req.json();
   const parsed = bodySchema.safeParse(body);

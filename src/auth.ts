@@ -5,6 +5,7 @@ import { MongoDBAdapter } from "@auth/mongodb-adapter";
 import { z } from "zod";
 import client from "@/lib/db";
 import { verifyPassword } from "@/lib/auth-utils";
+import { loginLimiter } from "@/lib/rate-limit";
 
 const credentialsSchema = z.object({
   email: z.string().email(),
@@ -24,16 +25,56 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
         const parsed = credentialsSchema.safeParse(credentials);
         if (!parsed.success) return null;
 
+        const email = parsed.data.email;
+
+        // V-03: In-memory rate limit (5 login attempts per 15 min per email)
+        const rl = loginLimiter.check(email);
+        if (rl.limited) return null;
+
         const db = client.db();
         const user = await db
           .collection("users")
-          .findOne({ email: parsed.data.email });
+          .findOne({ email });
 
         if (!user) return null;
         if (!user.emailVerified) return null;
 
+        // V-05: Check account lockout (DB-persisted failed attempts)
+        const MAX_FAILED_ATTEMPTS = 5;
+        const failedAttempts = (user.failedLoginAttempts as number) ?? 0;
+        const lockedUntil = user.lockedUntil as Date | undefined;
+
+        if (lockedUntil && new Date() < new Date(lockedUntil)) {
+          return null; // Account is still locked
+        }
+
         const valid = await verifyPassword(parsed.data.password, user.password as string);
-        if (!valid) return null;
+        if (!valid) {
+          // V-05: Increment failed attempts; lock with exponential backoff
+          const newFailedAttempts = failedAttempts + 1;
+          const update: Record<string, unknown> = {
+            failedLoginAttempts: newFailedAttempts,
+            lastFailedLoginAt: new Date(),
+          };
+          if (newFailedAttempts >= MAX_FAILED_ATTEMPTS) {
+            // Exponential backoff: 1 min, 2 min, 4 min, 8 min, ...
+            const lockMinutes = Math.pow(2, Math.floor(newFailedAttempts / MAX_FAILED_ATTEMPTS) - 1);
+            update.lockedUntil = new Date(Date.now() + lockMinutes * 60 * 1000);
+          }
+          await db.collection("users").updateOne(
+            { _id: user._id },
+            { $set: update }
+          );
+          return null;
+        }
+
+        // V-05: Reset failed attempts on successful login
+        if (failedAttempts > 0) {
+          await db.collection("users").updateOne(
+            { _id: user._id },
+            { $set: { failedLoginAttempts: 0 }, $unset: { lockedUntil: "", lastFailedLoginAt: "" } }
+          );
+        }
 
         return {
           id: user._id.toString(),

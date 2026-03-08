@@ -61,7 +61,7 @@ export async function scrapeRecipePage(url: string): Promise<ScrapeResult> {
     reader.cancel().catch(() => {});
   }
 
-  return extractRawContent(buffer, url);
+  return extractRawContent(buffer);
 }
 
 /** Fetch a page via Browserless /unblock — handles Cloudflare bot protection. */
@@ -100,7 +100,7 @@ export async function scrapeWithBrowserless(url: string): Promise<ScrapeResult> 
 function parseHtml(html: string, url: string): ScrapeResult {
   const structured = tryExtractStructured(html, url);
   if (structured) return structured;
-  return extractRawContent(html, url);
+  return extractRawContent(html);
 }
 
 function tryExtractStructured(html: string, url: string): ScrapeResult | null {
@@ -133,8 +133,7 @@ function tryExtractStructured(html: string, url: string): ScrapeResult | null {
   return { type: "raw", content: JSON.stringify(recipeData, null, 2) };
 }
 
-function extractRawContent(html: string, url: string): ScrapeResult {
-  void url;
+function extractRawContent(html: string): ScrapeResult {
   const $ = cheerio.load(html);
 
   $(

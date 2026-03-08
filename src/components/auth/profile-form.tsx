@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 
 interface ProfileFormProps {
   initialName: string;
@@ -47,57 +48,77 @@ export function ProfileForm({
   return (
     <form onSubmit={handleSave} className="space-y-6">
       {/* Account */}
-      <section className="rounded-2xl border border-neutral-200 bg-white p-6 space-y-4">
-        <h2 className="text-base font-semibold text-neutral-800">Account</h2>
-        <div className="space-y-1.5">
-          <label className="text-sm font-medium text-neutral-700" htmlFor="name">
-            Display name
-          </label>
-          <Input
-            id="name"
-            type="text"
-            value={name}
-            onChange={(e) => setName(e.target.value)}
-            required
-          />
-        </div>
-        <div className="space-y-1.5">
-          <label className="text-sm font-medium text-neutral-500 text-sm">Email</label>
-          <p className="text-sm text-neutral-700">{email}</p>
-        </div>
-      </section>
+      <Card className="border-warm-200">
+        <CardHeader>
+          <CardTitle className="font-serif text-lg text-warm-800">Account</CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <div className="space-y-1.5">
+            <label className="text-sm font-medium text-warm-700" htmlFor="name">
+              Display name
+            </label>
+            <Input
+              id="name"
+              type="text"
+              value={name}
+              onChange={(e) => setName(e.target.value)}
+              required
+              className="border-warm-200 focus-visible:ring-primary"
+            />
+          </div>
+          <div className="space-y-1.5">
+            <label className="text-sm font-medium text-warm-500">Email</label>
+            <p className="text-sm text-warm-700">{email}</p>
+          </div>
+        </CardContent>
+      </Card>
 
       {/* Preferences */}
-      <section className="rounded-2xl border border-neutral-200 bg-white p-6 space-y-4">
-        <h2 className="text-base font-semibold text-neutral-800">Preferences</h2>
-        <div className="space-y-1.5">
-          <label className="text-sm font-medium text-neutral-700">Default unit system</label>
-          <div className="flex gap-2">
-            {(["us", "metric"] as const).map((sys) => (
-              <button
-                key={sys}
-                type="button"
-                onClick={() => setUnitSystem(sys)}
-                className={`px-4 py-1.5 rounded-full text-sm font-medium border transition-colors ${
-                  unitSystem === sys
-                    ? "bg-[#7C9070] border-[#7C9070] text-white"
-                    : "border-neutral-300 text-neutral-600 hover:border-neutral-400"
-                }`}
-              >
-                {sys === "us" ? "US" : "Metric"}
-              </button>
-            ))}
+      <Card className="border-warm-200">
+        <CardHeader>
+          <CardTitle className="font-serif text-lg text-warm-800">Preferences</CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <div className="space-y-1.5">
+            <label className="text-sm font-medium text-warm-700">Default unit system</label>
+            <div className="flex gap-2">
+              {(["us", "metric"] as const).map((sys) => (
+                <button
+                  key={sys}
+                  type="button"
+                  onClick={() => setUnitSystem(sys)}
+                  className={`px-4 py-1.5 rounded-full text-sm font-medium border transition-colors cursor-pointer ${
+                    unitSystem === sys
+                      ? "bg-primary border-primary text-white"
+                      : "border-warm-300 text-warm-600 hover:border-warm-400"
+                  }`}
+                >
+                  {sys === "us" ? "US" : "Metric"}
+                </button>
+              ))}
+            </div>
           </div>
-        </div>
-      </section>
+        </CardContent>
+      </Card>
 
-      {error && <p className="text-sm text-red-500">{error}</p>}
+      {error && (
+        <div className="rounded-lg border border-red-200 bg-red-50 px-3 py-2">
+          <p className="text-sm text-red-600">{error}</p>
+        </div>
+      )}
 
       <div className="flex items-center gap-3">
         <Button type="submit" disabled={saving}>
           {saving ? "Saving…" : "Save changes"}
         </Button>
-        {saved && <span className="text-sm text-[#7C9070] font-medium">Saved!</span>}
+        {saved && (
+          <span className="flex items-center gap-1 text-sm font-medium text-primary">
+            <svg className="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <path d="M20 6 9 17l-5-5"/>
+            </svg>
+            Saved
+          </span>
+        )}
       </div>
     </form>
   );

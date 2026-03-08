@@ -119,14 +119,14 @@ export function convertUnit(
 /**
  * Convert a Fahrenheit temperature to Celsius and round to nearest 5°C.
  */
-export function fToC(f: number): number {
+function fToC(f: number): number {
   return Math.round(((f - 32) * 5) / 9 / 5) * 5;
 }
 
 /**
  * Convert a Celsius temperature to Fahrenheit and round to nearest 5°F.
  */
-export function cToF(c: number): number {
+function cToF(c: number): number {
   return Math.round(((c * 9) / 5 + 32) / 5) * 5;
 }
 
@@ -149,13 +149,3 @@ export function convertTemperatures(text: string, targetSystem: UnitSystem): str
   }
 }
 
-/** Returns true if a unit is a known US volume or weight unit */
-export function isUSUnit(unit: string): boolean {
-  const u = unit.toLowerCase().trim();
-  return u in VOLUME_TO_ML || u in WEIGHT_TO_G;
-}
-
-/** Returns true if a unit is a known metric unit */
-export function isMetricUnit(unit: string): boolean {
-  return ["ml", "l", "g", "kg"].includes(unit.toLowerCase().trim());
-}

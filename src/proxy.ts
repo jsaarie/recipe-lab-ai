@@ -12,13 +12,21 @@ export default auth((req) => {
     return NextResponse.redirect(loginUrl);
   }
 
-  // MFA challenge: user authenticated but hasn't verified TOTP this session
+  // V-04: MFA enforcement — block all protected routes until TOTP is verified
   if (
     session &&
     session.user.mfaEnabled &&
     !session.user.mfaVerified &&
-    pathname !== "/verify-mfa"
+    pathname !== "/verify-mfa" &&
+    pathname !== "/api/user/mfa/verify" // Allow the MFA verify endpoint itself
   ) {
+    // Return 401 JSON for API routes instead of redirect
+    if (pathname.startsWith("/api/")) {
+      return NextResponse.json(
+        { error: "MFA verification required" },
+        { status: 401 }
+      );
+    }
     return NextResponse.redirect(new URL("/verify-mfa", req.url));
   }
 

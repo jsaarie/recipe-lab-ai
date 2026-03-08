@@ -23,8 +23,8 @@ export function StepIngredients({
     <div
       className={`mt-4 rounded-lg border p-3 transition-colors ${
         allChecked
-          ? "border-[#7C9070]/30 bg-[#7C9070]/5"
-          : "border-neutral-200 bg-neutral-50"
+          ? "border-primary/30 bg-primary/5"
+          : "border-warm-200 bg-warm-50"
       }`}
     >
       <div className="space-y-2">
@@ -46,8 +46,8 @@ export function StepIngredients({
               <span
                 className={`mt-0.5 flex size-4.5 shrink-0 items-center justify-center rounded border transition-colors ${
                   checked
-                    ? "border-[#7C9070] bg-[#7C9070]"
-                    : "border-neutral-300 bg-white"
+                    ? "border-primary bg-primary"
+                    : "border-warm-300 bg-white"
                 }`}
               >
                 {checked && <Check className="size-3 text-white" strokeWidth={3} />}
@@ -55,13 +55,13 @@ export function StepIngredients({
               <span
                 className={`text-sm leading-snug transition-colors ${
                   checked
-                    ? "text-neutral-400 line-through"
-                    : "text-neutral-700"
+                    ? "text-warm-400 line-through"
+                    : "text-warm-700"
                 }`}
               >
                 {label}
                 {hasSplit && (
-                  <span className="ml-1 text-xs text-neutral-400">
+                  <span className="ml-1 text-xs text-warm-400">
                     (of {ing.totalQuantity} {ing.totalUnit})
                   </span>
                 )}
