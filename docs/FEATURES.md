@@ -840,3 +840,182 @@ When any timer reaches zero:
 - A chime sound plays
 - Device vibration fires (if supported)
 - Toast auto-dismisses after 5 seconds or on tap
+
+---
+
+## Feature: Recipe Feedback (v4.0) — Shipped Mar 2026
+
+### Overview
+
+Logged-in users can rate recipes and add cook notes after completing a recipe in the Lab, or any time from their Library. Feedback is stored on the user's saved recipe document in MongoDB.
+
+---
+
+### Feedback Fields
+
+| Field | Type | Required | Description |
+|-------|------|----------|-------------|
+| Rating | 1–5 stars | No | Star rating for the recipe |
+| Cook Notes | Plain text | No | Free-text notes about the cook |
+| feedbackCreatedAt | Timestamp | Auto | When feedback was first added |
+| feedbackUpdatedAt | Timestamp | Auto | When feedback was last edited |
+
+Both fields are optional — users can rate without notes or add notes without a rating.
+
+---
+
+### Entry Points
+
+1. **Post-Lab Completion** — After finishing the final step in Lab View, a "Rate This Recipe" button appears that opens a feedback modal overlay.
+2. **Library** — Users can add or edit feedback from any saved recipe via the recipe detail view.
+
+---
+
+### UX
+
+- **Feedback Modal** (`feedback-modal.tsx`) — Centered modal overlay with a star selector and text area.
+- **Library Cards** — Star rating is displayed on recipe cards in the Library grid (if set).
+- **Recipe Detail** — Full feedback (stars + notes) visible when opening a recipe from the Library.
+- **No reminders** — If the user skips the post-lab prompt, no badge or reminder is shown. Feedback can always be added later from the Library.
+
+---
+
+### Data Model
+
+Feedback fields added to the existing `savedRecipes` document:
+
+```ts
+interface RecipeFeedback {
+  rating?: number        // 1–5
+  cookNotes?: string     // plain text
+  feedbackCreatedAt?: Date
+  feedbackUpdatedAt?: Date
+}
+```
+
+---
+
+### API
+
+| Route | Method | Auth | Description |
+|-------|--------|------|-------------|
+| `/api/library/[id]/feedback` | PATCH | Required | Create or update feedback (rating, cookNotes) |
+| `/api/library` | GET | Required | Returns saved recipes with feedback fields included |
+
+---
+
+## Feature: Culinary RPG & XP System (v4.1) — Shipped Mar 2026
+
+### Overview
+
+Gamified cooking progression. Users earn Skill XP for cooking activities, level up through culinary title tiers, and unlock milestone badges. XP and title are displayed on the profile page and in the nav bar.
+
+---
+
+### XP Actions & Point Values
+
+| Action | XP | Trigger |
+|--------|----|---------|
+| Complete a recipe | 100 | Finish the last step in Lab View |
+| Rate a recipe | 15 | Submit a star rating (v4.0 feedback) |
+| Add cook notes | 20 | Submit cook notes (v4.0 feedback) |
+| OCR scan | 50 | Successfully scan a recipe via OCR (v3.0) |
+| Extract a recipe | 5 | Successfully parse a recipe URL |
+| Ingredient substitute | 10 | Make an ingredient swap (v2.1) |
+
+- XP is cumulative and never lost.
+- Each action awards XP once per recipe instance (e.g., updating a rating does not re-award XP, but rating a different recipe does).
+
+---
+
+### Culinary Title Tiers
+
+| Tier | Title | XP Required |
+|------|-------|-------------|
+| 1 | Home Cook | 0 |
+| 2 | Prep Cook | 200 |
+| 3 | Line Cook | 500 |
+| 4 | Sous Chef | 1,200 |
+| 5 | Head Chef | 2,500 |
+| 6 | Executive Chef | 5,000 |
+| 7 | Iron Chef | 10,000 |
+
+---
+
+### Display
+
+- **Profile Page** — XP progress bar showing current XP, progress to next tier, current title, and badge collection (`xp-progress.tsx`).
+- **Nav Bar Badge** — Compact culinary title shown in the user nav dropdown (`user-nav.tsx`).
+- **XP Updates** — Calculated on page load. No real-time toasts.
+
+---
+
+### Milestone Badges
+
+Earned for reaching specific milestones. Displayed on the user's profile.
+
+**Core Badges:**
+
+| Badge | Condition |
+|-------|-----------|
+| First Flame | Complete your first recipe |
+| Kitchen Regular | Complete 5 recipes |
+| Ten Timer | Complete 10 recipes |
+| Quarter Century | Complete 25 recipes |
+| Critic's Voice | Submit your first rating |
+| Field Notes | Add your first cook notes |
+| Gold Standard | Rate 3 recipes 5 stars in a row |
+
+**Extended Badges:**
+
+| Badge | Condition |
+|-------|-----------|
+| OCR Pioneer | Scan your first recipe via OCR |
+| Bookworm | Save 20 recipes to your library |
+| Night Owl | Complete a recipe after 10 PM |
+| Early Bird | Complete a recipe before 8 AM |
+| The Substitutor | Make an ingredient substitution |
+
+Badge computation logic lives in `src/lib/xp.ts` (`computeBadges()`).
+
+---
+
+### Data Model
+
+New `userProgress` collection in MongoDB:
+
+```ts
+interface UserProgress {
+  userId: string
+  totalXp: number
+  currentTier: number          // 1–7
+  currentTitle: string         // e.g., "Sous Chef"
+  badges: string[]             // badge IDs unlocked
+  xpLog: {                     // per-recipe XP award history
+    recipeId: string
+    actions: string[]          // e.g., ["complete", "rate", "notes"]
+    awardedAt: Date
+  }[]
+}
+```
+
+---
+
+### API
+
+| Route | Method | Auth | Description |
+|-------|--------|------|-------------|
+| `/api/user/progress` | GET | Required | Returns XP, tier, title, badges |
+| `/api/user/progress/xp` | POST | Required | Award XP for a validated action |
+
+---
+
+### Backlog
+
+- Real-time XP toasts and level-up animations
+- Leaderboards (social/competitive) — see v4.2
+- Streak tracking (consecutive days cooking)
+- Seasonal challenges and limited-time badges
+- Random Recipe Roll — AI-powered "Surprise Me" suggestion based on user taste profile
+
+---

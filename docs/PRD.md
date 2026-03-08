@@ -58,30 +58,43 @@ The roadmap is centered around **The Lab** — a guided cooking HUD that takes u
 
 The v2.x series focuses on **recipe personalization and user accounts**, shipped in thin slices so each release is independently useful.
 
-| Phase | Focus | Features |
-|-------|-------|----------|
-| v2.1 | Recipe Editing | Session-based serving size scaling with auto-recalculated quantities, manual ingredient quantity editing, ingredient swapping (free-text), measurement conversion (US ↔ Metric, Weight ↔ Volume, F ↔ C). **Shipped.** |
-| v2.2 | Accounts & Profiles | User registration (email + password via NextAuth.js), login with TOTP MFA (authenticator app), user profile with display name, default unit system, and preferred serving size. **Shipped.** |
-| v2.3 | Save & Access Recipes | Save parsed recipes to personal library (preserves active scaling/swaps), dedicated library page, open saved recipes back into recipe card view. First MongoDB-dependent release. **In Progress.** |
-| v2.4 | Library Management | Search and filter saved recipes by name or ingredient, edit saved recipe details (rename, notes, ingredients, steps), delete recipes from library |
+| Phase | Focus | Features | Status |
+|-------|-------|----------|--------|
+| v2.1 | Recipe Editing | Session-based serving size scaling, manual quantity editing, ingredient swapping (free-text), measurement conversion (US ↔ Metric, Weight ↔ Volume, F ↔ C) | **Shipped** |
+| v2.2 | Accounts & Profiles | User registration (email + password via NextAuth.js), login with TOTP MFA, user profile with display name, default unit system, preferred serving size | **Shipped** |
+| v2.3 | Save & Access Recipes | Save parsed recipes to personal library (preserves active scaling/swaps), dedicated library page, open saved recipes back into recipe card view | **Shipped** |
+| v2.4 | Library Management | Search and filter saved recipes, edit saved recipe details (rename, notes, ingredients, steps), delete recipes from library | Backlog |
 
 ### Post-V2.x Horizon — V3.x Series
 
 The v3.x series focuses on **new recipe input methods**, starting with digitizing physical cookbooks.
 
-| Phase | Focus | Features |
-|-------|-------|----------|
-| v3.0 | Cookbook Digitization | Photograph printed cookbook pages (up to 2 photos per recipe), AI vision extraction into standard recipe format, pre-save review/edit screen, "Digitized" badge in library |
-| v3.1 | Batch & Handwriting | Multi-photo batch import, handwriting support for recipe cards |
-| v3.x | AI Swaps | AI-suggested ingredient substitutions with ratio adjustments (replaces free-text swap from v2.1) |
+| Phase | Focus | Features | Status |
+|-------|-------|----------|--------|
+| v3.0 | Cookbook Digitization | Photograph printed cookbook pages (up to 2 photos), AI vision extraction into standard recipe format, pre-save review/edit screen, "Digitized" badge in library | **Shipped** |
+| v3.1 | Batch & Handwriting | Multi-photo batch import, handwriting support for recipe cards | Backlog |
+| v3.x | AI Swaps | AI-suggested ingredient substitutions with ratio adjustments (replaces free-text swap from v2.1) | Backlog |
+
+### Post-V3.x Horizon — V4.x Series
+
+The v4.x series introduces **gamification and social features** to turn Recipe Lab AI into an engaging culinary RPG.
+
+| Phase | Focus | Features | Status |
+|-------|-------|----------|--------|
+| v4.0 | Recipe Feedback | Star ratings (1–5) and cook notes per saved recipe, post-lab completion prompt, feedback displayed in library | **Shipped** |
+| v4.1 | Culinary RPG & XP | Skill XP for cooking actions, 7-tier culinary title system, milestone badges, XP bar and title badge in nav | **Shipped** |
+| v4.2 | Leaderboards | Global and friend leaderboards ranked by XP | Backlog |
+| v4.x | Random Recipe Roll | AI-powered "Surprise Me" recipe suggestion based on user taste profile | Backlog |
 
 ### Key Dependencies
 
 ```
 v2.1 ─────────────────────────────── (standalone, no auth or DB required) ✓ SHIPPED
 v2.2 (auth + profiles) ─────────────────────────────────────────────────── ✓ SHIPPED
-v2.3 (save) ──→ v2.4 (manage)   (both require v2.2 auth)
-v3.0 (digitization) ─────────────── requires v2.3 library + v2.4 editing
+v2.3 (save) ──→ v2.4 (manage)   (both require v2.2 auth)                  v2.3 ✓ SHIPPED
+v3.0 (digitization) ─────────────── requires v2.3 library + v2.4 editing  ✓ SHIPPED
+v4.0 (feedback) ─────────────────── requires v2.3 savedRecipes             ✓ SHIPPED
+v4.1 (RPG/XP) ───────────────────── requires v4.0 feedback                 ✓ SHIPPED
 ```
 
 v2.1 ships independently. v2.3 and v2.4 both require v2.2 auth to be stable first.
@@ -92,6 +105,58 @@ v2.1 ships independently. v2.3 and v2.4 both require v2.2 auth to be stable firs
 - **SMS OTP cost**: Deferred indefinitely. SMS was not implemented in v2.2. Only TOTP (authenticator app) MFA was shipped.
 - **Email OTP**: Not implemented in v2.2. `emailVerified` is auto-set to the current date at registration; a real email verification flow is deferred to a future patch.
 - **Avatar uploads**: Not implemented in v2.2. The profile page stores a name, default unit system, and preferred servings only.
+
+## v4.1 Implementation Status
+
+v4.1 is **fully shipped** as of Mar 2026.
+
+| Feature | Status | Notes |
+|---------|--------|-------|
+| XP award on recipe completion | Shipped | 100 XP; once per recipe |
+| XP award on rating | Shipped | 15 XP; once per recipe |
+| XP award on cook notes | Shipped | 20 XP; once per recipe |
+| XP award on OCR scan | Shipped | 50 XP; once per recipe |
+| XP award on URL extract | Shipped | 5 XP (not in original spec — added) |
+| XP award on ingredient substitute | Shipped | 10 XP (not in original spec — added) |
+| 7-tier culinary title system | Shipped | Tiers: Home Cook → Iron Chef (top tier renamed from "Master Chef") |
+| XP progress bar | Shipped | `xp-progress.tsx` component on profile page |
+| Nav bar title badge | Shipped | Compact culinary title in `user-nav.tsx` |
+| Milestone badges | Shipped | Core + extended badges; `src/lib/xp.ts` `computeBadges()` |
+| `GET /api/user/progress` | Shipped | Returns XP, tier, title, badges |
+| `POST /api/user/progress/xp` | Shipped | Awards XP for a validated action |
+| Random Recipe Roll | Not shipped | Deferred to v4.x backlog |
+
+---
+
+## v4.0 Implementation Status
+
+v4.0 is **fully shipped** as of Mar 2026.
+
+| Feature | Status | Notes |
+|---------|--------|-------|
+| Star rating (1–5) on saved recipe | Shipped | `PATCH /api/library/[id]/feedback` |
+| Cook notes on saved recipe | Shipped | Same endpoint |
+| Post-lab completion modal prompt | Shipped | "Rate This Recipe" button on lab-complete screen |
+| Feedback modal (stars + text area) | Shipped | `feedback-modal.tsx` |
+| Star rating shown on library cards | Shipped | Library grid displays rating if set |
+| Full feedback on recipe detail | Shipped | Stars + notes visible when opening from library |
+
+---
+
+## v3.0 Implementation Status
+
+v3.0 is **fully shipped** as of Mar 2026.
+
+| Feature | Status | Notes |
+|---------|--------|-------|
+| Camera / photo upload UI | Shipped | Up to 2 photos; mobile camera input |
+| Gemini Vision extraction | Shipped | `POST /api/parse-image`; same ParsedRecipe schema |
+| Pre-save review/edit screen | Shipped | Editable before saving |
+| "Digitized" badge in library | Shipped | Camera icon on library cards |
+| Handwriting support | Not shipped | Deferred to v3.1 |
+| Batch import | Not shipped | Deferred to v3.1 |
+
+---
 
 ## v2.2 Implementation Status
 

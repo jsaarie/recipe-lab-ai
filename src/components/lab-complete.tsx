@@ -26,6 +26,13 @@ export function LabComplete({ recipe, servings, ingredientSwaps, unitSystem, isO
   const [saved, setSaved] = useState(false);
   const [saveError, setSaveError] = useState("");
   const [savedId, setSavedId] = useState<string | null>(null);
+  const [xpToast, setXpToast] = useState<number | null>(null);
+
+  useEffect(() => {
+    if (xpToast === null) return;
+    const t = setTimeout(() => setXpToast(null), 2500);
+    return () => clearTimeout(t);
+  }, [xpToast]);
 
   // Feedback modal state
   const [showFeedback, setShowFeedback] = useState(false);
@@ -47,6 +54,7 @@ export function LabComplete({ recipe, servings, ingredientSwaps, unitSystem, isO
         const data = await res.json();
         setSaved(true);
         setSavedId(data.id);
+        if (data.awardedXp > 0) setXpToast(data.awardedXp);
       }
     } catch {
       setSaveError("Failed to save");
@@ -110,6 +118,11 @@ export function LabComplete({ recipe, servings, ingredientSwaps, unitSystem, isO
 
   return (
     <>
+    {xpToast !== null && (
+      <div className="fixed bottom-6 right-6 bg-green-500 text-white px-4 py-2 rounded-full font-bold text-sm animate-bounce z-50">
+        +{xpToast} XP
+      </div>
+    )}
     <div
       className="relative flex min-h-screen flex-col items-center justify-center bg-background px-4"
       onClick={handleTapZone}

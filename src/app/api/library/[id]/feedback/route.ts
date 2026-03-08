@@ -4,6 +4,7 @@ import client from "@/lib/db";
 import { ObjectId } from "mongodb";
 import { z } from "zod";
 import { awardXp } from "@/lib/award-xp";
+import { XP_ACTIONS } from "@/lib/xp";
 
 const feedbackSchema = z.object({
   rating: z.number().int().min(1).max(5).optional(),
@@ -65,12 +66,15 @@ export async function PATCH(
   );
 
   // Award XP for rating and/or cook notes (idempotent — won't double-award)
+  let awardedXp = 0;
   if (parsed.data.rating !== undefined) {
     await awardXp(session.user.id, id, "rate");
+    awardedXp += XP_ACTIONS.rate;
   }
   if (parsed.data.cookNotes?.trim()) {
     await awardXp(session.user.id, id, "notes");
+    awardedXp += XP_ACTIONS.notes;
   }
 
-  return NextResponse.json({ updated: true });
+  return NextResponse.json({ updated: true, awardedXp });
 }

@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useCallback } from "react";
+import { useState, useCallback, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Star } from "lucide-react";
 
@@ -23,9 +23,16 @@ export function FeedbackModal({
 }: FeedbackModalProps) {
   const [rating, setRating] = useState<number | undefined>(initialRating);
   const [hovered, setHovered] = useState<number | undefined>(undefined);
-  const [cookNotes, setCookNotes] = useState(initialNotes);
+  const [cookNotes, setCookNotes] = useState(initialNotes ?? "");
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
+  const [xpToast, setXpToast] = useState<number | null>(null);
+
+  useEffect(() => {
+    if (xpToast === null) return;
+    const t = setTimeout(() => setXpToast(null), 2500);
+    return () => clearTimeout(t);
+  }, [xpToast]);
 
   const handleSave = useCallback(async () => {
     setSaving(true);
@@ -41,6 +48,8 @@ export function FeedbackModal({
         setSaving(false);
         return;
       }
+      const data = await res.json();
+      if (data.awardedXp > 0) setXpToast(data.awardedXp);
       onSaved(rating, cookNotes.trim());
       onClose();
     } catch {
@@ -52,6 +61,12 @@ export function FeedbackModal({
   const displayRating = hovered ?? rating;
 
   return (
+    <>
+    {xpToast !== null && (
+      <div className="fixed bottom-6 right-6 bg-green-500 text-white px-4 py-2 rounded-full font-bold text-sm animate-bounce z-[60]">
+        +{xpToast} XP
+      </div>
+    )}
     <div
       className="fixed inset-0 z-50 flex items-end justify-center bg-black/40 sm:items-center"
       onClick={(e) => { if (e.target === e.currentTarget) onClose(); }}
@@ -145,5 +160,6 @@ export function FeedbackModal({
         </div>
       </div>
     </div>
+    </>
   );
 }

@@ -32,6 +32,16 @@ pnpm type-check   # Run TypeScript compiler check
 - `src/types/` — TypeScript type definitions
 - `docs/` — Product docs (PRD, features, architecture)
 
+## Mobile-First UI/UX — CRITICAL
+
+This app is used **in the kitchen**, primarily on **mobile and tablet** while cooking. All UI/UX must be built mobile-first:
+
+- Design for touch first — tap targets must be large enough (min 44×44px), no hover-only interactions
+- Tooltips, dropdowns, and menus must work without hover (use tap-to-toggle or bottom sheets)
+- Avoid fixed-width layouts that overflow on small screens — use flex with `min-w-0`, `truncate`, `shrink-0` as needed
+- Tables are generally unsuitable — prefer card/list layouts that reflow naturally
+- Test all new UI at 375px width before considering it done
+
 ## Conventions
 
 - Use `pnpm` for all package operations
@@ -39,7 +49,6 @@ pnpm type-check   # Run TypeScript compiler check
 - Components use named exports
 - Gemini integration in `src/lib/ai/gemini.ts`
 - Validate AI responses with Zod schemas
-- Mobile-first responsive design
 
 ## Environment Variables
 

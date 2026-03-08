@@ -82,9 +82,13 @@ export function UserNav() {
             </p>
             <p className="text-xs text-warm-400 truncate">{session.user.email}</p>
             {culinaryTitle && (
-              <span className="mt-1.5 inline-block rounded-full bg-primary/10 px-2 py-0.5 text-[11px] font-semibold text-primary">
+              <Link
+                href="/profile#culinary-rank"
+                onClick={() => setOpen(false)}
+                className="mt-1.5 inline-block rounded-full bg-primary/10 px-2 py-0.5 text-[11px] font-semibold text-primary hover:bg-primary/20 transition-colors"
+              >
                 {culinaryTitle}
-              </span>
+              </Link>
             )}
           </div>
           <Link

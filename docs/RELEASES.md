@@ -4,6 +4,71 @@ This document tracks each production deployment, including the version, release 
 
 ---
 
+## V4.1 — Culinary RPG & XP System
+
+**Date:** 2026-03-08
+
+### Features
+
+- Skill XP awarded for cooking actions: complete recipe (100 XP), rate (15 XP), add cook notes (20 XP), OCR scan (50 XP), URL extract (5 XP), ingredient substitute (10 XP)
+- XP is awarded once per action per recipe; cumulative and never lost
+- 7-tier culinary title system: Home Cook → Prep Cook → Line Cook → Sous Chef → Head Chef → Executive Chef → Iron Chef
+- XP progress bar on profile page (`xp-progress.tsx`): current XP, progress to next tier, current title
+- Culinary title badge shown in nav bar dropdown (`user-nav.tsx`)
+- Milestone badges: First Flame, Kitchen Regular, Ten Timer, Quarter Century, Critic's Voice, Field Notes, Gold Standard, OCR Pioneer, Bookworm, Night Owl, Early Bird, The Substitutor
+- Badge computation logic in `src/lib/xp.ts` (`computeBadges()`)
+- `GET /api/user/progress` — returns XP, tier, title, badges
+- `POST /api/user/progress/xp` — server-validated XP award for an action
+- New `userProgress` MongoDB collection with `xpLog` for per-recipe action tracking
+
+### Not shipped (deferred)
+
+- Real-time XP toasts / level-up animations
+- Leaderboards
+- Streak tracking
+- Random Recipe Roll
+
+---
+
+## V4.0 — Recipe Feedback
+
+**Date:** 2026-03-08
+
+### Features
+
+- Star ratings (1–5) and cook notes on saved recipes
+- Feedback stored on `savedRecipes` documents in MongoDB (`rating`, `cookNotes`, `feedbackCreatedAt`, `feedbackUpdatedAt`)
+- Post-lab completion: "Rate This Recipe" button appears after finishing the last step; opens feedback modal
+- Feedback modal (`feedback-modal.tsx`): star selector + text area; both fields optional
+- Star rating displayed on library cards (if set)
+- Full feedback (stars + notes) shown in recipe detail view
+- `PATCH /api/library/[id]/feedback` — create or update feedback
+
+---
+
+## V3.0 — Cookbook Digitization
+
+**Date:** 2026-03-08
+
+### Features
+
+- Photograph printed cookbook pages (up to 2 photos per recipe) to extract a structured recipe
+- Camera capture and file upload supported on mobile and desktop
+- `POST /api/parse-image`: sends images to Gemini Vision; returns same `ParsedRecipe` JSON shape as `/api/parse-recipe`
+- Pre-save review/edit screen — all fields editable before saving to library
+- Digitized recipes show a camera icon badge in the library card
+- Source field on saved recipe extended with `source: 'url' | 'digitized'`, optional `cookbookName` and `cookbookPage`
+- Filter chip in library: "All" / "From Web" / "From Cookbooks"
+- Images discarded server-side after extraction (not stored)
+
+### Not shipped (deferred)
+
+- Handwriting / recipe card support (v3.1)
+- Batch import of multiple recipes (v3.1)
+- PDF upload (v3.1)
+
+---
+
 ## V2.2.1 — UI Fix
 
 **Date:** 2026-03-07

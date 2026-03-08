@@ -5,6 +5,8 @@ export const XP_ACTIONS = {
   rate: 15,
   notes: 20,
   ocr: 50,
+  extract: 5,
+  substitute: 10,
 } as const;
 
 export type XpAction = keyof typeof XP_ACTIONS;
@@ -71,6 +73,8 @@ export const BADGE_DEFS: BadgeDef[] = [
   { id: "bookworm",         name: "Bookworm",          description: "Save 20 recipes to your library" },
   { id: "night_owl",        name: "Night Owl",         description: "Complete a recipe after 10 PM" },
   { id: "early_bird",       name: "Early Bird",        description: "Complete a recipe before 8 AM" },
+  { id: "five_recipes",     name: "Kitchen Regular",   description: "Complete 5 recipes" },
+  { id: "substitutor",      name: "The Substitutor",   description: "Make an ingredient substitution" },
 ];
 
 export const BADGE_MAP = Object.fromEntries(BADGE_DEFS.map((b) => [b.id, b]));
@@ -123,12 +127,16 @@ export function computeBadges(input: BadgeInput): BadgeId[] {
 
   const earned: BadgeId[] = [];
 
+  const hasSubstitute = xpLog.some((e) => e.actions.includes("substitute"));
+
   if (completions.length >= 1) earned.push("first_flame");
+  if (completions.length >= 5) earned.push("five_recipes");
   if (completions.length >= 10) earned.push("ten_timer");
   if (completions.length >= 25) earned.push("quarter_century");
   if (hasRated) earned.push("critics_voice");
   if (hasNotes) earned.push("field_notes");
   if (hasOcr) earned.push("ocr_pioneer");
+  if (hasSubstitute) earned.push("substitutor");
   if (savedCount >= 20) earned.push("bookworm");
 
   // Gold Standard: 3 most recent ratings all 5 stars

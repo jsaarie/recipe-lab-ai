@@ -11,7 +11,6 @@ import { LabView } from "@/components/lab-view";
 import { LabComplete } from "@/components/lab-complete";
 import { FeedbackModal } from "@/components/feedback-modal";
 import { UserNav } from "@/components/auth/user-nav";
-import { useCulinaryTitle } from "@/lib/use-culinary-title";
 import { useRecipeEditor, type RecipeEditorOptions, type UnitSystem } from "@/lib/use-recipe-editor";
 import type { ParsedRecipe, StepIngredient } from "@/types/recipe";
 import { Star } from "lucide-react";
@@ -103,7 +102,6 @@ function RecipeView({
   recipe,
   recipeSource,
   isOcr,
-  culinaryTitle,
   editorOptions,
   ingredientsLoading,
   parseError,
@@ -125,7 +123,6 @@ function RecipeView({
   recipe: ParsedRecipe;
   recipeSource: "structured" | "ai";
   isOcr: boolean;
-  culinaryTitle: string | null;
   editorOptions: RecipeEditorOptions;
   ingredientsLoading: boolean;
   parseError: string;
@@ -256,11 +253,6 @@ function RecipeView({
               onError={onError}
             />
           </div>
-          {culinaryTitle && (
-            <span className="hidden sm:inline-block rounded-full bg-primary/10 px-2.5 py-1 text-xs font-semibold text-primary">
-              {culinaryTitle}
-            </span>
-          )}
           <UserNav />
         </div>
       </StickyHeader>
@@ -307,7 +299,6 @@ function RecipeView({
 // ---------------------------------------------------------------------------
 
 export function HomePage() {
-  const culinaryTitle = useCulinaryTitle();
   const [recipe, setRecipe] = useState<ParsedRecipe | null>(null);
   const [recipeSource, setRecipeSource] = useState<"structured" | "ai">("structured");
   const [isOcr, setIsOcr] = useState(false);
@@ -433,7 +424,6 @@ export function HomePage() {
           recipe={recipe}
           recipeSource={recipeSource}
           isOcr={isOcr}
-          culinaryTitle={culinaryTitle}
           editorOptions={editorOptions}
           ingredientsLoading={ingredientsLoading}
           parseError={parseError}
@@ -483,11 +473,6 @@ export function HomePage() {
             <p className="max-w-sm text-lg text-warm-500 sm:text-xl animate-fade-up-delay-1">
               Stop Scrolling. Start Cooking.
             </p>
-            {culinaryTitle && (
-              <span className="rounded-full bg-primary/10 px-3 py-1 text-sm font-semibold text-primary animate-fade-up-delay-1">
-                {culinaryTitle}
-              </span>
-            )}
           </div>
           <div className="relative z-[1] w-full space-y-3 animate-fade-up-delay-2">
             <RecipeInput

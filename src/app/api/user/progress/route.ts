@@ -42,7 +42,7 @@ export async function GET() {
     totalXp: progress.totalXp,
     currentTier: progress.currentTier,
     currentTitle: progress.currentTitle,
-    badges: progress.badges,
+    badges: progress.badges ?? [],
   });
 }
 

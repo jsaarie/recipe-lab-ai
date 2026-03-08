@@ -3,6 +3,7 @@ import { auth } from "@/auth";
 import client from "@/lib/db";
 import { z } from "zod";
 import { awardXp } from "@/lib/award-xp";
+import { XP_ACTIONS } from "@/lib/xp";
 
 const saveRecipeSchema = z.object({
   recipe: z.object({
@@ -88,14 +89,17 @@ export async function POST(req: Request) {
 
   const newId = result.insertedId.toString();
 
-  // Award XP: completing a recipe (saving = completing the lab flow)
+  // Award XP: extract (parsing/saving the recipe) + completing the lab flow
+  await awardXp(session.user.id, newId, "extract");
   await awardXp(session.user.id, newId, "complete");
   // Award OCR XP if the recipe was digitized via image scan
   if (isOcr) {
     await awardXp(session.user.id, newId, "ocr");
   }
 
-  return NextResponse.json({ id: newId }, { status: 201 });
+  const awardedXp = XP_ACTIONS.extract + XP_ACTIONS.complete + (isOcr ? XP_ACTIONS.ocr : 0);
+
+  return NextResponse.json({ id: newId, awardedXp }, { status: 201 });
 }
 
 export async function GET() {
