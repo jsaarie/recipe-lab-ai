@@ -221,6 +221,466 @@ Below the instruction text on each step, a list of ingredients appears:
 
 ---
 
+## Feature: Recipe Editing — Scaling, Swapping & Conversion (v2.1)
+
+### Overview
+
+Session-based recipe personalization tools available to all users (no account required). All adjustments live in client state and reset on page refresh. When a logged-in user later saves a recipe, their active adjustments are persisted with the saved copy.
+---
+
+### Implementation Status: Shipped (Feb 2026)
+
+The editor is built entirely on the client — no additional API routes required. Key files:
+
+| File | Role |
+|------|------|
+| `src/lib/use-recipe-editor.ts` | `useRecipeEditor` hook — holds all editor state and derives computed ingredient/instruction lists |
+| `src/lib/conversions.ts` | `convertUnit()` (US/Metric volume/weight), `convertTemperatures()` (F/C in instruction text) |
+| `src/lib/density.ts` | `getDensityGPerCup()` density lookup (~100 ingredients); `volumeToGrams()` / `gramsToVolume()` |
+| `src/lib/fractions.ts` | `parseQuantity()` (string to decimal), `formatQuantity()` (decimal to Unicode fraction string) |
+| `src/components/recipe-card.tsx` | `ServingScaler`, `UnitToggle`, `IngredientRow` components; `RecipeCardEditorProps` interface |
+| `src/components/home-page.tsx` | Mounts `useRecipeEditor` in `RecipeView`; passes `editor` props to `RecipeCard` and derived state to `LabView` |
+
+### Bug Fixes (v2.1.1 patch — 2026-02-25)
+
+- **Unit conversion input interpreted in original unit** — `applyConversion` now carries the converted unit into the override so quantity edits are interpreted in the displayed metric unit, not the original US unit.
+- **Lab HUD name matching fails on minor variations** — step ingredient matching now normalises hyphens and collapses extra whitespace before comparison.
+- **Swapped ingredients not shown in Lab HUD steps** — `patchedStepIngredients` falls back to index-based lookup when name matching fails, correctly resolving post-swap ingredient names.
+- **Density conversion path was dead code** — `applyConversion` now tries density-based weight conversion before direct volume conversion on the metric path; "1 cup flour" now converts to 120 g instead of 237 ml.
+- **No-op quantity commit created a silent pin** — `commitQty` skips `onQuantityChange` when the draft is unchanged, preventing unintentional quantity overrides.
+- **Metric quantities displayed as Unicode fractions** — added `formatMetricQuantity` to `fractions.ts`; metric quantities now render as decimals rounded to one decimal place.
+- **Lab HUD pre-snap bypassed thirds/sixths formatting** — pre-snap `Math.round(scaledQty * 8) / 8` removed from `lab-view.tsx`; `scaledQty` is passed directly to `formatQuantity`.
+- **Range-style servings strings silently truncated** — `parseServings` now detects range strings (e.g. "12–16 cookies") and shows the full range in the scaler UI.
+- **Reset action had no confirmation** — a toast with an "Undo" action now appears for 4 seconds after Reset is triggered.
+- **No-op ingredient swap showed swapped indicator** — swap state is only applied when the submitted value differs from the original ingredient name.
+- **Unitless count ingredients did not scale** — scaling path now detects unitless count ingredients and applies the scale factor directly to the quantity.
+- **Swapped ingredient names not shown in Lab HUD list** — active swaps map is now passed into the Lab ingredient list resolver.
+
+
+---
+
+### Serving Size Scaling
+
+User changes the serving count from the recipe card. All ingredient quantities auto-recalculate proportionally.
+
+**Behavior:**
+- Original serving count shown as the baseline (e.g. "4 servings")
+- User can increment/decrement or type a new count
+- All `quantity` values in the ingredient list are multiplied by `(newServings / originalServings)`
+- Fractional results are rounded to the nearest sensible fraction (e.g. 0.667 → ⅔)
+- The scaled serving count is shown in the recipe meta bar
+
+---
+
+### Ingredient Quantity Editing
+
+User can tap any ingredient quantity to edit it directly.
+
+**Behavior:**
+- Inline editable field on the quantity portion of each ingredient row
+- Changes do not affect other ingredients (independent of scaling)
+- Edited quantities are preserved through serving size re-scales (the edited value becomes the new baseline for that ingredient)
+
+---
+
+### Ingredient Swapping
+
+User can swap any ingredient for a different one.
+
+**Behavior:**
+- Each ingredient row has a swap action (e.g. a swap icon or context menu)
+- Tapping it opens a small inline editor with the current item pre-filled
+- User types the replacement ingredient name (free-text)
+- The ingredient row updates in place with the new name; quantity and unit are preserved
+- A visual indicator marks swapped ingredients so the user can see their modifications at a glance
+
+**v3.0 upgrade path:** AI-suggested substitutes with ratio adjustments replace the free-text input.
+
+---
+
+### Measurement Conversion
+
+User can toggle unit systems app-wide for the current recipe.
+
+**Supported conversions:**
+| Type | Example |
+|------|---------|
+| US ↔ Metric | 1 cup → 240 ml, 1 oz → 28g, 1 lb → 454g |
+| Weight ↔ Volume | 1 cup flour → 120g (density lookup per ingredient) |
+| Temperature | 350°F → 175°C (in instruction text and meta) |
+
+**Design decisions:**
+- A toggle in the recipe card header switches between US and Metric globally for that recipe
+- Temperature conversions apply to both the meta bar (if oven temp is listed) and inline within instruction text
+- Weight ↔ Volume requires a static density lookup table for common baking/cooking ingredients; items not in the table fall back to displaying only volume or weight as available
+- Fractions are displayed as Unicode fraction characters (½, ¼, ¾) rather than decimals where possible
+
+---
+
+## Feature: Accounts & Profiles (v2.2) — Shipped Feb 2026
+
+### Overview
+
+User authentication and profile management using NextAuth.js (Auth.js v5 beta). This release ships the auth foundation that v2.3 and v2.4 depend on.
+
+---
+
+### Implementation Status
+
+| Feature | Status | Notes |
+|---------|--------|-------|
+| Email + password registration | Shipped | `POST /api/auth/register`; Zod-validated |
+| Password hashing | Shipped | bcryptjs, 12 salt rounds |
+| Login | Shipped | NextAuth.js credentials provider; `/login` page |
+| JWT sessions | Shipped | `strategy: "jwt"`; custom fields propagated via `jwt` + `session` callbacks |
+| MongoDB user persistence | Shipped | `@auth/mongodb-adapter`; lazy proxy client (`src/lib/db.ts`) |
+| TOTP MFA | Shipped | `otplib` v13; QR enrolment at `/profile`; challenge at `/verify-mfa` |
+| Protected routes | Shipped | Next.js middleware (`src/proxy.ts`) guards `/profile` and enforces MFA challenge |
+| Profile page | Shipped | `/profile` — display name, default unit system, preferred servings |
+| User nav | Shipped | `UserNav` component — initials avatar, dropdown with Profile + Sign out |
+| Email OTP | Not shipped | Deferred; `emailVerified` auto-set at registration as a placeholder |
+| SMS OTP | Not shipped | Deferred indefinitely |
+| Avatar upload | Not shipped | No image upload; initials fallback rendered client-side |
+| Change password | Not shipped | No password change endpoint in this release |
+
+---
+
+### User Registration
+
+- `POST /api/auth/register` accepts `{ name, email, password }`
+- Zod validation: name (1–100 chars), valid email, password (min 8 chars, at least one uppercase, lowercase, and digit)
+- Passwords stored as bcryptjs hashes with 12 salt rounds
+- Duplicate email check returns HTTP 409
+- `emailVerified` is set to the current timestamp at registration (no real email verification flow yet — deferred to a future patch)
+- New user document fields: `name`, `email`, `password`, `emailVerified`, `mfaEnabled: false`, `defaultUnitSystem: "us"`, `preferredServings: null`, `createdAt`, `updatedAt`
+
+---
+
+### Login
+
+- NextAuth.js Credentials provider at `/login`
+- `authorize` callback: validates schema with Zod, looks up user in `users` collection, rejects if `emailVerified` is null/unset, verifies bcrypt hash
+- On success, returns user object including `mfaEnabled`, `defaultUnitSystem`, `preferredServings`
+- These fields are propagated into the JWT token and then into the session object via the `jwt` and `session` callbacks in `src/auth.ts`
+
+---
+
+### MFA — TOTP Only
+
+Multi-factor authentication is optional and can be enabled from the profile page after login.
+
+**Supported second factors:**
+
+| Method | Library/Provider | Status |
+|--------|-----------------|--------|
+| TOTP (authenticator app) | `otplib` v13 — compatible with Google Authenticator, Authy, 1Password | Shipped |
+| Email OTP | — | Not shipped |
+| SMS OTP | — | Not shipped |
+
+**Enrolment flow (`/profile` → MfaSetup component):**
+1. User clicks "Enable authenticator app"
+2. `POST /api/user/mfa/setup` generates a TOTP secret via `otplib`, stores it as `mfaPendingSecret` in the user document, returns a QR code data URL (via `qrcode` package)
+3. User scans the QR code in their authenticator app
+4. User enters the 6-digit code; `POST /api/user/mfa/verify` with `{ token, mode: "setup" }` verifies against `mfaPendingSecret`
+5. On success: `mfaEnabled: true`, `mfaSecret` set, `mfaPendingSecret` removed
+
+**Login challenge flow:**
+1. User logs in with email + password
+2. JWT callback sets `mfaVerified: false` when `mfaEnabled: true`
+3. Middleware (`src/proxy.ts`) redirects to `/verify-mfa` if `mfaEnabled && !mfaVerified`
+4. `/verify-mfa` page calls `POST /api/user/mfa/verify` with `{ token, mode: "login" }` against the active `mfaSecret`
+5. On success: session updated via `useSession().update({ mfaVerified: true })`; user redirected to `/`
+
+---
+
+### API Routes
+
+| Route | Method | Auth | Description |
+|-------|--------|------|-------------|
+| `/api/auth/register` | POST | None | Create a new user account |
+| `/api/auth/[...nextauth]` | GET/POST | — | NextAuth.js handler (sign in, sign out, session) |
+| `/api/user/profile` | GET | Required | Fetch current user's profile (excludes password, mfaSecret) |
+| `/api/user/profile` | PATCH | Required | Update name, defaultUnitSystem, preferredServings |
+| `/api/user/mfa/setup` | POST | Required | Generate TOTP secret + QR code, store as pending |
+| `/api/user/mfa/verify` | POST | Required | Verify TOTP code (mode: "setup" to activate, mode: "login" for session challenge) |
+
+---
+
+### User Profile
+
+A settings page at `/profile` (protected route), accessible from the user nav dropdown.
+
+**Profile fields implemented:**
+
+| Field | Editable | Notes |
+|-------|----------|-------|
+| Display name | Yes | Shown in nav dropdown |
+| Email | Read-only | Displayed but not changeable in this release |
+| Default unit system | Yes | "US" or "Metric" toggle |
+| Preferred serving size | Yes | Integer 1–100; blank = use recipe default |
+| Avatar / profile image | No | Initials rendered from display name |
+
+**Profile page sections:**
+- Account (display name, email read-only)
+- Preferences (default unit system, preferred serving size)
+- Security (TOTP authenticator app enrolment/status)
+
+---
+
+### Middleware & Route Protection
+
+`src/proxy.ts` (the Next.js middleware file, exported as `default` and `config`):
+- Redirects unauthenticated users away from `/profile` → `/login?callbackUrl=/profile`
+- Redirects users with `mfaEnabled && !mfaVerified` to `/verify-mfa` (except on `/verify-mfa` itself)
+- Excludes Next.js internals, static files, and public API routes from matching
+
+---
+
+### MongoDB Client
+
+`src/lib/db.ts` exports a lazy proxy `MongoClient`:
+- In development: cached on `global._mongoClient` to survive hot reloads
+- In production: a new `MongoClient` is created per cold start (Vercel serverless compatible)
+- The proxy defers connection until the first method call, so builds succeed without `MONGODB_URI` configured
+- Requires `MONGODB_URI` environment variable at runtime
+
+---
+
+## Feature: Save & Access Recipes (v2.3)
+
+### Overview
+
+Logged-in users can save parsed recipes to a personal library. The saved copy captures their current adjustments (scaling, swaps, unit preferences). Requires MongoDB.
+
+---
+
+### Save a Recipe
+
+- "Save Recipe" button appears on the recipe card when a user is logged in
+- Saves the current recipe state including:
+  - Original parsed recipe data
+  - Active serving size (if changed from original)
+  - Any ingredient swaps made
+  - User's preferred unit system at time of save
+- Duplicate detection: if the user already saved the same source URL, prompt to overwrite or save as a copy
+
+---
+
+### Recipe Library Page
+
+Dedicated `/library` route listing all saved recipes.
+
+**Each library entry shows:**
+- Recipe title
+- Thumbnail (if available from original page)
+- Source site name
+- Date saved
+- Saved serving size
+
+---
+
+### Open a Saved Recipe
+
+- Clicking a library entry loads the recipe into the full recipe card view
+- Restores the saved scaling and swap state
+- User can enter The Lab directly from a saved recipe
+
+---
+
+### Data Model
+
+```typescript
+interface SavedRecipe {
+  id: string;
+  userId: string;
+  savedAt: Date;
+  recipe: ParsedRecipe;           // full recipe snapshot at save time
+  servings: number;               // user's preferred serving size
+  ingredientSwaps: {              // keyed by ingredient index
+    [index: number]: string;      // replacement item name
+  };
+  unitSystem: 'us' | 'metric';
+  tags: string[];                 // user-applied tags (v2.4)
+  notes: string;                  // user's personal notes (v2.4)
+}
+```
+
+---
+
+## Feature: Recipe Library Management (v2.4)
+
+### Overview
+
+Power tools for managing a saved recipe collection. Builds on the library scaffold from v2.3.
+
+---
+
+### Search & Filter
+
+- Search bar on the library page filters results in real time
+- Searchable fields: recipe title, source site, ingredient names
+- Filter chips for user-applied tags
+
+---
+
+### Edit Saved Recipe Details
+
+Users can edit their saved copy of a recipe without affecting the original source.
+
+**Editable fields:**
+- Recipe title (rename)
+- Personal notes (free-text note attached to the recipe)
+- Ingredients (quantity, unit, item name for any row)
+- Instructions (edit or reorder steps)
+- Tags (add/remove)
+
+Changes save back to MongoDB immediately (optimistic UI update).
+
+---
+
+### Delete Recipe
+
+- Delete action on each library card and on the recipe detail view
+- Confirmation prompt before deletion
+- Soft-delete with 30-day recovery window (restore from trash) — optional, can ship as hard delete first
+
+---
+
+## Feature: Cookbook Digitization (v3.0)
+
+### Overview
+
+Users photograph printed cookbook pages and the app digitizes them into the standard recipe format using Gemini Vision. Digitized recipes land in the personal library alongside URL-sourced recipes, with full support for scaling, swaps, and The Lab.
+
+---
+
+### User Flow
+
+```
+1. User taps "Add from Cookbook" on the library page
+2. User photographs or uploads a cookbook page (photo 1)
+3. Optional: user taps "Add another page" to upload a second photo (for recipes that span two pages)
+4. User taps "Extract Recipe" — both images are sent in a single Gemini Vision call
+5. Extracted recipe appears in a pre-save review screen (editable card)
+6. User reviews, corrects any extraction errors, and taps "Save to Library"
+7. Recipe is saved and appears in the library with a "Digitized" badge
+```
+
+---
+
+### Input Methods
+
+| Method | Notes |
+|--------|-------|
+| Camera capture (mobile) | `<input type="file" accept="image/*" capture="environment">` — opens native camera |
+| File upload (photo) | JPEG, PNG, HEIC from camera roll or file system |
+| Multi-photo (2 max) | Sequential: photo 1 → optional "Add another page" → photo 2 |
+
+**v3.0 scope:** Printed cookbook pages only. Handwriting support (recipe cards, margin notes) is deferred to v3.1.
+
+---
+
+### Upload UI Flow
+
+**Step 1 — Photo 1:**
+- Large camera/upload button with label "Photograph a cookbook page"
+- Thumbnail preview shown after selection with a "Retake" option
+- "Add another page" button appears below the preview
+
+**Step 2 — Photo 2 (optional):**
+- Same camera/upload button, same retake option
+- "Remove second page" link to go back to single-photo mode
+
+**Step 3 — Submit:**
+- "Extract Recipe" button; disabled until at least one photo is selected
+- Loading state while Gemini processes (can take 5–10s for two images)
+
+---
+
+### AI Extraction
+
+Uses the existing Gemini 2.5 Flash model with its native multimodal (vision) capability — no new AI provider required.
+
+**New API route:** `POST /api/parse-image`
+
+- Accepts `multipart/form-data` with 1–2 image files
+- Images are converted to base64 and included as `inlineData` parts in the Gemini request
+- The extraction prompt instructs Gemini to treat all images as pages of a single recipe
+- Returns the same `ParsedRecipe` JSON shape as `/api/parse-recipe`
+- Validated with the same Zod schema
+- Images are discarded server-side after extraction — not stored
+
+**Request shape:**
+```
+POST /api/parse-image
+Content-Type: multipart/form-data
+
+page1: <image file>
+page2: <image file>   (optional)
+```
+
+**Response:** identical to `/api/parse-recipe` — `{ success, recipe }` or `{ success: false, error }`.
+
+**File limits:**
+- Max 2 images per request
+- Max 10 MB per image (enforced on client and server)
+- Accepted MIME types: `image/jpeg`, `image/png`, `image/heic`, `image/webp`
+
+---
+
+### Pre-Save Review Screen
+
+Before saving, the extracted recipe is shown in an editable card — identical to the v2.4 edit experience.
+
+- All fields are editable inline (title, ingredients, steps, times, servings)
+- Source field defaults to "Digitized from photo" — user can replace with cookbook name and page number
+- "Retake / Replace photos" link to go back and re-shoot if extraction was badly wrong
+- "Save to Library" commits the recipe; "Discard" exits without saving
+
+---
+
+### Data Model Extension
+
+```typescript
+interface SavedRecipe {
+  // ... existing v2.3/v2.4 fields ...
+  source: 'url' | 'digitized';    // new field — 'url' for existing recipes
+  cookbookName?: string;           // user-entered at review (e.g. "Plenty")
+  cookbookPage?: string;           // user-entered at review (e.g. "p. 142")
+}
+```
+
+The `source` field defaults to `'url'` for all recipes saved before v3.0.
+
+---
+
+### Library Integration
+
+- Digitized recipes show a camera icon badge in the library card (instead of a source domain pill)
+- Filter chip added to the library page: "All" / "From Web" / "From Cookbooks"
+- No other library UI changes required
+
+---
+
+### Dependencies
+
+- Requires v2.3 (library save) and v2.4 (edit saved recipes) to be shipped first
+- Gemini multimodal: already supported by the existing `GEMINI_API_KEY` — no new credentials
+
+---
+
+### Out of Scope for v3.0
+
+| Feature | Deferred to |
+|---------|-------------|
+| Handwriting / recipe card support | v3.1 |
+| Batch import (multiple recipes at once) | v3.1 |
+| Storing original cookbook photos | Not planned |
+| PDF upload | v3.1 |
+| Cookbook organisation (group by book) | v3.x |
+
+---
+
 ## Feature: Scraper Waterfall & Bot Protection Bypass (v0.5)
 
 ### Overview

@@ -6,10 +6,11 @@ Recipe Lab AI is a web app that takes a recipe URL and parses it into a clean, s
 
 ## Tech Stack
 
-- **Framework**: Next.js 15 (App Router) with TypeScript
+- **Framework**: Next.js 16 (App Router) with TypeScript
 - **Styling**: Tailwind CSS v4 + shadcn/ui
-- **AI**: Gemini
-- **Database**: MongoDB (post-MVP, not used yet)
+- **AI**: Gemini 2.5 Flash
+- **Auth**: NextAuth.js v5 beta (Credentials provider, JWT sessions, TOTP MFA)
+- **Database**: MongoDB Atlas (native driver; v2.2+)
 - **Deployment**: Vercel
 - **Package Manager**: pnpm
 
@@ -46,6 +47,8 @@ Copy `.env.example` to `.env.local` and fill in:
 
 ```bash
 GEMINI_API_KEY=           # Required — Google Gemini API key
+MONGODB_URI=              # Required (v2.2+) — MongoDB Atlas connection string
+AUTH_SECRET=              # Required (v2.2+) — random secret for JWT signing
 BROWSERLESS_API_KEY=      # Optional — enables Cloudflare bypass via Browserless.io
 ```
 

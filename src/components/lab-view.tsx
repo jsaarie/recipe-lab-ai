@@ -12,6 +12,7 @@ import { useWakeLock } from "@/lib/use-wake-lock";
 
 interface LabViewProps {
   recipe: ParsedRecipe;
+  derivedInstructions: string[];
   initialStep?: number;
   onExitLab: () => void;
   onComplete: () => void;
@@ -72,7 +73,7 @@ function useSwipe(onSwipeLeft: () => void, onSwipeRight: () => void) {
   return { onTouchStart, onTouchEnd };
 }
 
-export function LabView({ recipe, initialStep = 0, onExitLab, onComplete }: LabViewProps) {
+export function LabView({ recipe, derivedInstructions, initialStep = 0, onExitLab, onComplete }: LabViewProps) {
   const [currentStep, setCurrentStep] = useState(initialStep);
   const [slideDirection, setSlideDirection] = useState<"out-left" | "out-right" | "in-right" | "in-left" | null>(null);
   const [showArrows, setShowArrows] = useState(true);
@@ -85,7 +86,7 @@ export function LabView({ recipe, initialStep = 0, onExitLab, onComplete }: LabV
     wakeLock.request();
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
-  const steps = recipe.instructions;
+  const steps = derivedInstructions;
   const totalSteps = steps.length;
   const isFirstStep = currentStep === 0;
   const isLastStep = currentStep === totalSteps - 1;

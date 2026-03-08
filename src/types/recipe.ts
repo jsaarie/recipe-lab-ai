@@ -24,3 +24,13 @@ export interface ParsedRecipe {
   notes: string;
   stepIngredients?: StepIngredient[][];
 }
+
+export interface SavedRecipe {
+  _id: string;
+  userId: string;
+  savedAt: string;
+  recipe: ParsedRecipe;
+  servings: number;
+  ingredientSwaps: Record<number, string>;
+  unitSystem: "us" | "metric";
+}

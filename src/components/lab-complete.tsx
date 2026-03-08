@@ -4,16 +4,44 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { BookOpen, ChevronLeft } from "lucide-react";
 import type { ParsedRecipe } from "@/types/recipe";
+import type { UnitSystem } from "@/lib/use-recipe-editor";
 
 interface LabCompleteProps {
   recipe: ParsedRecipe;
+  servings: number;
+  ingredientSwaps: Record<number, string>;
+  unitSystem: UnitSystem;
   onViewRecipe: () => void;
   onCookAnother: () => void;
   onBackToLastStep: () => void;
 }
 
-export function LabComplete({ recipe, onViewRecipe, onBackToLastStep }: LabCompleteProps) {
+export function LabComplete({ recipe, servings, ingredientSwaps, unitSystem, onViewRecipe, onBackToLastStep }: LabCompleteProps) {
   const stepCount = recipe.instructions.length;
+
+  // Save state
+  const [saving, setSaving] = useState(false);
+  const [saved, setSaved] = useState(false);
+  const [saveError, setSaveError] = useState("");
+
+  const handleSave = useCallback(async (e: React.MouseEvent) => {
+    e.stopPropagation();
+    setSaving(true);
+    setSaveError("");
+    try {
+      const res = await fetch("/api/library", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ recipe, servings, ingredientSwaps, unitSystem }),
+      });
+      if (res.status === 401) { setSaveError("Sign in to save"); }
+      else if (!res.ok) { setSaveError("Failed to save"); }
+      else { setSaved(true); }
+    } catch {
+      setSaveError("Failed to save");
+    }
+    setSaving(false);
+  }, [recipe, servings, ingredientSwaps, unitSystem]);
 
   // Slide-in on mount
   const [slideClass, setSlideClass] = useState("translate-x-8 opacity-0");
@@ -108,6 +136,15 @@ export function LabComplete({ recipe, onViewRecipe, onBackToLastStep }: LabCompl
             <BookOpen className="size-5" />
             View Full Recipe
           </Button>
+          <Button
+            onClick={handleSave}
+            disabled={saving || saved}
+            variant="outline"
+            className="h-12 w-full rounded-full text-base font-semibold text-neutral-600"
+          >
+            {saving ? "Saving…" : saved ? "Saved!" : "Save Recipe"}
+          </Button>
+          {saveError && <p className="text-center text-sm text-red-500">{saveError}</p>}
           <Button
             onClick={(e) => { e.stopPropagation(); goBack(); }}
             variant="outline"

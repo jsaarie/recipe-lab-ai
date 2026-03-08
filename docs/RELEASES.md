@@ -4,6 +4,83 @@ This document tracks each production deployment, including the version, release 
 
 ---
 
+## V2.3 — Save & Access Recipes *(In Progress)*
+
+**Date:** TBD
+
+### Features
+
+- "Save Recipe" button on the recipe card (visible when logged in)
+- Saves the current recipe state: parsed recipe, active serving size, ingredient swaps, unit system
+- Duplicate detection by source URL — silently overwrites the existing saved entry
+- `GET /api/library` — lists all saved recipes for the current user (title, source, total time, servings, savedAt)
+- `POST /api/library` — saves or overwrites a recipe for the current user
+- `GET /api/library/[id]` — fetches a single saved recipe with full data
+- `DELETE /api/library/[id]` — deletes a saved recipe
+- `/library` page — dedicated library listing (protected route)
+
+---
+
+## V2.2 — Accounts & Profiles
+
+**Date:** 2026-02-28
+
+### Features
+
+- Email + password registration (`POST /api/auth/register`): Zod-validated; password min 8 chars, uppercase, lowercase, digit required; bcryptjs hash (12 rounds)
+- Login via NextAuth.js Credentials provider; rejects unverified accounts; JWT session strategy
+- TOTP MFA (authenticator app): optional; enrolment from `/profile`; login challenge via `/verify-mfa`; powered by `otplib` v13 with NobleCryptoPlugin + ScureBase32Plugin
+- Profile page (`/profile`): display name, default unit system (US/Metric), preferred serving size
+- `UserNav` component: avatar/initials dropdown in header with Profile and Sign out; sign in/sign up links when logged out
+- Protected routes via `src/proxy.ts` (Next.js 16 middleware): guards `/profile`, enforces MFA challenge redirect
+- MongoDB Atlas integration: `users` collection via `@auth/mongodb-adapter`; lazy MongoClient proxy (`src/lib/db.ts`) defers connection until first use
+- Session type augmentation (`src/types/next-auth.d.ts`): custom fields `id`, `mfaEnabled`, `mfaVerified`, `defaultUnitSystem`, `preferredServings`
+
+### Not shipped in v2.2 (deferred)
+
+- Email OTP / magic link (`emailVerified` auto-set at registration as a placeholder)
+- SMS OTP (deferred indefinitely)
+- Avatar upload (initials fallback only)
+- Change password endpoint
+
+---
+
+## V2.1.1 — Recipe Editor Patch
+
+**Date:** 2026-02-25
+
+### Bug Fixes
+
+- **Density conversion path was dead code** — `applyConversion` now tries density-based weight conversion before direct volume conversion; "1 cup flour" now converts to 120 g instead of 237 ml
+- **Metric quantities displayed as Unicode fractions** — added `formatMetricQuantity` to `fractions.ts`; metric quantities render as decimals rounded to one decimal place
+- **Lab HUD ingredient name matching fails on minor variations** — normalises hyphens and collapses extra whitespace before comparison
+- **Swapped ingredients not shown in Lab HUD steps** — `patchedStepIngredients` falls back to index-based lookup when name matching fails
+- **Lab HUD pre-snap bypassed thirds/sixths formatting** — pre-snap `Math.round(scaledQty * 8) / 8` removed from `lab-view.tsx`; `scaledQty` passed directly to `formatQuantity`
+- **Unit conversion input interpreted in original unit** — `applyConversion` carries the converted unit into the override so edits use the displayed metric unit
+- **No-op quantity commit created a silent pin** — `commitQty` skips `onQuantityChange` when the draft is unchanged
+- **Range-style servings strings silently truncated** — `parseServings` now detects range strings (e.g. "12–16 cookies") and shows the full range
+- **Reset action had no confirmation** — toast with "Undo" action appears for 4 seconds after Reset
+- **No-op ingredient swap showed swapped indicator** — swap state only applied when submitted value differs from original
+- **Unitless count ingredients did not scale** — scaling path now detects unitless count ingredients and applies scale factor directly
+- **Swapped ingredient names not shown in Lab HUD list** — active swaps map passed into Lab ingredient list resolver
+
+---
+
+## V2.1 — Recipe Editing
+
+**Date:** 2026-02-25
+
+### Features
+
+- **Serving size scaling**: increment/decrement or type a new count; all ingredient quantities scale proportionally; manual overrides pin a value and exclude it from further scaling
+- **Ingredient quantity editing**: tap any quantity to edit inline; edits persist through serve-size re-scales
+- **Ingredient swapping**: free-text replacement with "(swapped)" badge and clear button; swap state visible in both recipe card and Lab HUD
+- **Measurement conversion**: US ↔ Metric volume/weight toggle; Weight ↔ Volume via static density lookup (`~100 ingredients`); F ↔ C temperature conversion in instruction text
+- **Fraction rendering**: Unicode fraction characters (½, ¼, ¾, ⅓, ⅔, ⅛, ⅜, ⅝, ⅞) for US quantities; decimal formatting for metric
+- All editor state is client-side only (`useRecipeEditor` hook) — no API changes; resets on page refresh
+
+---
+
 ## V0.5 — Scraper Waterfall & Browser Extension
 
 **Date:** 2026-02-25
