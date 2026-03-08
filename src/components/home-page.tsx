@@ -259,7 +259,7 @@ export function HomePage() {
       {/* Hero state */}
       {!loading && (
         <>
-          <header className="w-full max-w-xl py-4 flex justify-end">
+          <header className="relative z-10 w-full max-w-xl py-4 flex justify-end">
             <UserNav />
           </header>
           <div className="flex w-full max-w-xl flex-1 flex-col items-center justify-center gap-6 -mt-14">
