@@ -38,6 +38,10 @@ export async function GET(
     servings: doc.servings,
     ingredientSwaps: doc.ingredientSwaps,
     unitSystem: doc.unitSystem,
+    rating: doc.rating,
+    cookNotes: doc.cookNotes,
+    feedbackCreatedAt: doc.feedbackCreatedAt,
+    feedbackUpdatedAt: doc.feedbackUpdatedAt,
   });
 }
 

@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { auth } from "@/auth";
 import client from "@/lib/db";
 import { z } from "zod";
+import { awardXp } from "@/lib/award-xp";
 
 const saveRecipeSchema = z.object({
   recipe: z.object({
@@ -33,6 +34,7 @@ const saveRecipeSchema = z.object({
   servings: z.number().int().min(1),
   ingredientSwaps: z.record(z.coerce.number(), z.string()),
   unitSystem: z.enum(["us", "metric"]),
+  isOcr: z.boolean().optional(),
 });
 
 export async function POST(req: Request) {
@@ -61,11 +63,12 @@ export async function POST(req: Request) {
 
   if (existing) {
     // Overwrite existing saved recipe
+    const { isOcr: _isOcr, ...recipeData } = parsed.data;
     await collection.updateOne(
       { _id: existing._id },
       {
         $set: {
-          ...parsed.data,
+          ...recipeData,
           savedAt: new Date(),
         },
       }
@@ -76,13 +79,23 @@ export async function POST(req: Request) {
     });
   }
 
+  const { isOcr, ...recipeData } = parsed.data;
   const result = await collection.insertOne({
     userId: session.user.id,
     savedAt: new Date(),
-    ...parsed.data,
+    ...recipeData,
   });
 
-  return NextResponse.json({ id: result.insertedId.toString() }, { status: 201 });
+  const newId = result.insertedId.toString();
+
+  // Award XP: completing a recipe (saving = completing the lab flow)
+  await awardXp(session.user.id, newId, "complete");
+  // Award OCR XP if the recipe was digitized via image scan
+  if (isOcr) {
+    await awardXp(session.user.id, newId, "ocr");
+  }
+
+  return NextResponse.json({ id: newId }, { status: 201 });
 }
 
 export async function GET() {
@@ -103,6 +116,7 @@ export async function GET() {
       "recipe.totalTime": 1,
       servings: 1,
       savedAt: 1,
+      rating: 1,
     })
     .toArray();
 
@@ -113,6 +127,7 @@ export async function GET() {
     totalTime: r.recipe.totalTime,
     servings: r.servings,
     savedAt: r.savedAt,
+    rating: r.rating,
   }));
 
   return NextResponse.json(mapped);

@@ -2,27 +2,34 @@
 
 import { useCallback, useEffect, useRef, useState } from "react";
 import { Button } from "@/components/ui/button";
-import { BookOpen, ChevronLeft } from "lucide-react";
+import { BookOpen, ChevronLeft, Star } from "lucide-react";
 import type { ParsedRecipe } from "@/types/recipe";
 import type { UnitSystem } from "@/lib/use-recipe-editor";
+import { FeedbackModal } from "@/components/feedback-modal";
 
 interface LabCompleteProps {
   recipe: ParsedRecipe;
   servings: number;
   ingredientSwaps: Record<number, string>;
   unitSystem: UnitSystem;
+  isOcr?: boolean;
   onViewRecipe: () => void;
   onCookAnother: () => void;
   onBackToLastStep: () => void;
 }
 
-export function LabComplete({ recipe, servings, ingredientSwaps, unitSystem, onViewRecipe, onBackToLastStep }: LabCompleteProps) {
+export function LabComplete({ recipe, servings, ingredientSwaps, unitSystem, isOcr, onViewRecipe, onBackToLastStep }: LabCompleteProps) {
   const stepCount = recipe.instructions.length;
 
   // Save state
   const [saving, setSaving] = useState(false);
   const [saved, setSaved] = useState(false);
   const [saveError, setSaveError] = useState("");
+  const [savedId, setSavedId] = useState<string | null>(null);
+
+  // Feedback modal state
+  const [showFeedback, setShowFeedback] = useState(false);
+  const [feedbackRating, setFeedbackRating] = useState<number | undefined>(undefined);
 
   const handleSave = useCallback(async (e: React.MouseEvent) => {
     e.stopPropagation();
@@ -32,11 +39,15 @@ export function LabComplete({ recipe, servings, ingredientSwaps, unitSystem, onV
       const res = await fetch("/api/library", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ recipe, servings, ingredientSwaps, unitSystem }),
+        body: JSON.stringify({ recipe, servings, ingredientSwaps, unitSystem, isOcr }),
       });
       if (res.status === 401) { setSaveError("Sign in to save"); }
       else if (!res.ok) { setSaveError("Failed to save"); }
-      else { setSaved(true); }
+      else {
+        const data = await res.json();
+        setSaved(true);
+        setSavedId(data.id);
+      }
     } catch {
       setSaveError("Failed to save");
     }
@@ -98,6 +109,7 @@ export function LabComplete({ recipe, servings, ingredientSwaps, unitSystem, onV
   );
 
   return (
+    <>
     <div
       className="relative flex min-h-screen flex-col items-center justify-center bg-background px-4"
       onClick={handleTapZone}
@@ -144,6 +156,16 @@ export function LabComplete({ recipe, servings, ingredientSwaps, unitSystem, onV
           >
             {saving ? "Saving…" : saved ? "Saved!" : "Save Recipe"}
           </Button>
+          {saved && savedId && (
+            <Button
+              onClick={(e) => { e.stopPropagation(); setShowFeedback(true); }}
+              variant="outline"
+              className="h-12 w-full rounded-full text-base font-semibold text-warm-600"
+            >
+              <Star className={`size-5 ${feedbackRating !== undefined ? "fill-amber-400 text-amber-400" : ""}`} />
+              {feedbackRating !== undefined ? `Rated ${feedbackRating}/5` : "Rate This Recipe"}
+            </Button>
+          )}
           {saveError && <p className="text-center text-sm text-red-500">{saveError}</p>}
           <Button
             onClick={(e) => { e.stopPropagation(); goBack(); }}
@@ -156,5 +178,15 @@ export function LabComplete({ recipe, servings, ingredientSwaps, unitSystem, onV
         </div>
       </div>
     </div>
+    {showFeedback && savedId && (
+      <FeedbackModal
+        recipeId={savedId}
+        recipeTitle={recipe.title}
+        initialRating={feedbackRating}
+        onClose={() => setShowFeedback(false)}
+        onSaved={(r) => setFeedbackRating(r)}
+      />
+    )}
+    </>
   );
 }

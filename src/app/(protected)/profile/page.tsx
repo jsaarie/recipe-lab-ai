@@ -3,8 +3,10 @@ import Link from "next/link";
 import { auth } from "@/auth";
 import { ProfileForm } from "@/components/auth/profile-form";
 import { MfaSetup } from "@/components/auth/mfa-setup";
+import { XpProgress } from "@/components/xp-progress";
 import client from "@/lib/db";
 import { ObjectId } from "mongodb";
+import { getTierForXp, type BadgeId, type UserProgress } from "@/lib/xp";
 
 export const metadata = { title: "Profile — Recipe Lab AI" };
 
@@ -23,6 +25,15 @@ export default async function ProfilePage() {
     );
 
   if (!user) redirect("/login");
+
+  const db2 = client.db();
+  const rawProgress = await db2
+    .collection("userProgress")
+    .findOne({ userId: session.user.id });
+
+  const progressXp: number = (rawProgress as UserProgress | null)?.totalXp ?? 0;
+  const progressTier = getTierForXp(progressXp);
+  const progressBadges: BadgeId[] = (rawProgress as UserProgress | null)?.badges ?? [];
 
   const initials = ((user.name as string) || "U")
     .split(" ")
@@ -58,6 +69,12 @@ export default async function ProfilePage() {
           </div>
         </div>
 
+        <XpProgress
+          totalXp={progressXp}
+          currentTier={progressTier.tier}
+          currentTitle={progressTier.title}
+          badges={progressBadges}
+        />
         <ProfileForm
           initialName={user.name as string}
           initialUnitSystem={(user.defaultUnitSystem as "us" | "metric") ?? "us"}

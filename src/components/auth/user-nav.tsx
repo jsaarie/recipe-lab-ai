@@ -4,11 +4,13 @@ import { useState, useRef, useEffect } from "react";
 import Link from "next/link";
 import { useSession, signOut } from "next-auth/react";
 import { User, LogOut, Settings, BookOpen } from "lucide-react";
+import { useCulinaryTitle } from "@/lib/use-culinary-title";
 
 export function UserNav() {
   const { data: session, status } = useSession();
   const [open, setOpen] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
+  const culinaryTitle = useCulinaryTitle();
 
   // Close on outside click
   useEffect(() => {
@@ -79,6 +81,11 @@ export function UserNav() {
               {session.user.name}
             </p>
             <p className="text-xs text-warm-400 truncate">{session.user.email}</p>
+            {culinaryTitle && (
+              <span className="mt-1.5 inline-block rounded-full bg-primary/10 px-2 py-0.5 text-[11px] font-semibold text-primary">
+                {culinaryTitle}
+              </span>
+            )}
           </div>
           <Link
             href="/library"

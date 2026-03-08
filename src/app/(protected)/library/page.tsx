@@ -6,8 +6,10 @@ import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { UserNav } from "@/components/auth/user-nav";
 import { CookbookUpload } from "@/components/cookbook-upload";
+import { FeedbackModal } from "@/components/feedback-modal";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import { Star } from "lucide-react";
 
 interface LibraryEntry {
   _id: string;
@@ -17,6 +19,7 @@ interface LibraryEntry {
   servings: number;
   ingredientCount?: number;
   savedAt: string;
+  rating?: number;
 }
 
 function formatDate(dateStr: string) {
@@ -46,7 +49,7 @@ function getTitleColor(title: string): string {
   return `hsl(${hue}, 35%, 88%)`;
 }
 
-type SortOption = "newest" | "alphabetical" | "cookTime";
+type SortOption = "newest" | "alphabetical" | "cookTime" | "rating";
 
 export default function LibraryPage() {
   const { data: session, status } = useSession();
@@ -59,6 +62,9 @@ export default function LibraryPage() {
   const [showUpload, setShowUpload] = useState(false);
   const [search, setSearch] = useState("");
   const [sort, setSort] = useState<SortOption>("newest");
+
+  // Feedback modal state
+  const [feedbackTarget, setFeedbackTarget] = useState<LibraryEntry | null>(null);
 
   useEffect(() => {
     if (status === "unauthenticated") {
@@ -110,6 +116,9 @@ export default function LibraryPage() {
       case "cookTime":
         result = [...result].sort((a, b) => (a.totalTime || "").localeCompare(b.totalTime || ""));
         break;
+      case "rating":
+        result = [...result].sort((a, b) => (b.rating ?? -1) - (a.rating ?? -1));
+        break;
       case "newest":
       default:
         // Already sorted by savedAt desc from API
@@ -160,6 +169,23 @@ export default function LibraryPage() {
 
       {showUpload && <CookbookUpload onClose={() => setShowUpload(false)} />}
 
+      {feedbackTarget && (
+        <FeedbackModal
+          recipeId={feedbackTarget._id}
+          recipeTitle={feedbackTarget.title}
+          initialRating={feedbackTarget.rating}
+          onClose={() => setFeedbackTarget(null)}
+          onSaved={(rating) => {
+            setRecipes((prev) =>
+              prev.map((r) =>
+                r._id === feedbackTarget._id ? { ...r, rating } : r
+              )
+            );
+            setFeedbackTarget(null);
+          }}
+        />
+      )}
+
       <main className="w-full max-w-3xl px-4 py-8 space-y-6">
         {/* Page header */}
         <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
@@ -209,6 +235,7 @@ export default function LibraryPage() {
               <option value="newest">Newest</option>
               <option value="alphabetical">A–Z</option>
               <option value="cookTime">Cook time</option>
+              <option value="rating">Top rated</option>
             </select>
           </div>
         )}
@@ -259,7 +286,7 @@ export default function LibraryPage() {
             >
               {/* Color thumbnail placeholder */}
               <div
-                className="flex h-20 items-end px-4 pb-2"
+                className="flex h-12 items-end px-4 pb-2"
                 style={{ backgroundColor: getTitleColor(r.title) }}
                 onClick={() => handleOpen(r._id)}
               >
@@ -294,10 +321,30 @@ export default function LibraryPage() {
                     {r.servings}
                   </Badge>
                 </div>
+                {/* Star rating */}
+                {r.rating !== undefined && (
+                  <div className="flex items-center gap-0.5">
+                    {[1, 2, 3, 4, 5].map((s) => (
+                      <Star
+                        key={s}
+                        className={`size-3.5 ${s <= r.rating! ? "fill-amber-400 text-amber-400" : "fill-warm-100 text-warm-200"}`}
+                      />
+                    ))}
+                  </div>
+                )}
                 <div className="flex items-center justify-between pt-1">
                   <span className="text-xs text-warm-400">
                     Saved {formatDate(r.savedAt)}
                   </span>
+                  {/* Rate button */}
+                  <button
+                    onClick={(e) => { e.stopPropagation(); setFeedbackTarget(r); }}
+                    className="rounded p-1.5 text-warm-300 cursor-pointer transition-colors hover:bg-amber-50 hover:text-amber-500"
+                    title="Rate recipe"
+                    aria-label="Rate recipe"
+                  >
+                    <Star className={`h-4 w-4 ${r.rating !== undefined ? "fill-amber-400 text-amber-400" : ""}`} />
+                  </button>
                   {/* Delete — two-tap confirm */}
                   {deleteConfirm === r._id ? (
                     <div className="flex items-center gap-1">

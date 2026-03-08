@@ -25,6 +25,13 @@ export interface ParsedRecipe {
   stepIngredients?: StepIngredient[][];
 }
 
+export interface RecipeFeedback {
+  rating?: number;
+  cookNotes?: string;
+  feedbackCreatedAt?: string;
+  feedbackUpdatedAt?: string;
+}
+
 export interface SavedRecipe {
   _id: string;
   userId: string;
@@ -33,4 +40,8 @@ export interface SavedRecipe {
   servings: number;
   ingredientSwaps: Record<number, string>;
   unitSystem: "us" | "metric";
+  rating?: number;
+  cookNotes?: string;
+  feedbackCreatedAt?: string;
+  feedbackUpdatedAt?: string;
 }

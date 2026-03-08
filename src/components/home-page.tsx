@@ -9,9 +9,12 @@ import { RecipeCard } from "@/components/recipe-card";
 import { LabBanner } from "@/components/lab-banner";
 import { LabView } from "@/components/lab-view";
 import { LabComplete } from "@/components/lab-complete";
+import { FeedbackModal } from "@/components/feedback-modal";
 import { UserNav } from "@/components/auth/user-nav";
+import { useCulinaryTitle } from "@/lib/use-culinary-title";
 import { useRecipeEditor, type RecipeEditorOptions, type UnitSystem } from "@/lib/use-recipe-editor";
 import type { ParsedRecipe, StepIngredient } from "@/types/recipe";
+import { Star } from "lucide-react";
 
 // ---------------------------------------------------------------------------
 // Sticky header with scroll-aware shadow
@@ -99,11 +102,15 @@ function LoadingSkeleton() {
 function RecipeView({
   recipe,
   recipeSource,
+  isOcr,
+  culinaryTitle,
   editorOptions,
   ingredientsLoading,
   parseError,
   view,
   labStep,
+  activeSaved,
+  onActiveSavedChange,
   onRecipeParsed,
   onStepIngredientsMapped,
   onError,
@@ -117,11 +124,15 @@ function RecipeView({
 }: {
   recipe: ParsedRecipe;
   recipeSource: "structured" | "ai";
+  isOcr: boolean;
+  culinaryTitle: string | null;
   editorOptions: RecipeEditorOptions;
   ingredientsLoading: boolean;
   parseError: string;
   view: View;
   labStep: number;
+  activeSaved: { id: string; rating?: number; cookNotes?: string } | null;
+  onActiveSavedChange: (v: { id: string; rating?: number; cookNotes?: string } | null) => void;
   onRecipeParsed: (r: ParsedRecipe, s: "structured" | "ai") => void;
   onStepIngredientsMapped: (si: StepIngredient[][] | null) => void;
   onError: (e: string) => void;
@@ -134,6 +145,7 @@ function RecipeView({
   onCookAnother: () => void;
 }) {
   const editor = useRecipeEditor(recipe, editorOptions);
+  const [showFeedbackModal, setShowFeedbackModal] = useState(false);
 
   if (view === "lab") {
     return (
@@ -158,6 +170,7 @@ function RecipeView({
         servings={editor.servings}
         ingredientSwaps={ingredientSwaps}
         unitSystem={editor.unitSystem}
+        isOcr={isOcr}
         onViewRecipe={onViewRecipe}
         onCookAnother={onCookAnother}
         onBackToLastStep={onBackToLastStep}
@@ -165,8 +178,48 @@ function RecipeView({
     );
   }
 
+  const feedbackPanel = activeSaved ? (
+    <div className="mt-2 flex items-center justify-between rounded-xl border border-warm-200 bg-warm-50 px-4 py-3">
+      <div className="flex flex-col gap-0.5">
+        <div className="flex items-center gap-1">
+          {[1, 2, 3, 4, 5].map((s) => (
+            <Star
+              key={s}
+              className={`size-4 ${activeSaved.rating !== undefined && s <= activeSaved.rating ? "fill-amber-400 text-amber-400" : "fill-warm-100 text-warm-300"}`}
+            />
+          ))}
+          {activeSaved.rating === undefined && (
+            <span className="ml-1 text-xs text-warm-400">Not rated yet</span>
+          )}
+        </div>
+        {activeSaved.cookNotes && (
+          <p className="text-xs text-warm-500 line-clamp-2">{activeSaved.cookNotes}</p>
+        )}
+      </div>
+      <button
+        onClick={() => setShowFeedbackModal(true)}
+        className="shrink-0 rounded-lg px-3 py-1.5 text-xs font-medium text-primary hover:bg-primary/10 transition-colors"
+      >
+        {activeSaved.rating !== undefined || activeSaved.cookNotes ? "Edit" : "Rate"}
+      </button>
+    </div>
+  ) : null;
+
   return (
     <>
+      {showFeedbackModal && activeSaved && (
+        <FeedbackModal
+          recipeId={activeSaved.id}
+          recipeTitle={recipe.title}
+          initialRating={activeSaved.rating}
+          initialNotes={activeSaved.cookNotes}
+          onClose={() => setShowFeedbackModal(false)}
+          onSaved={(rating, cookNotes) => {
+            onActiveSavedChange({ ...activeSaved, rating, cookNotes });
+            setShowFeedbackModal(false);
+          }}
+        />
+      )}
       <StickyHeader>
         <div className="mx-auto flex max-w-2xl items-center gap-2 sm:gap-4">
           <Link href="/" className="shrink-0 font-serif font-bold text-warm-700" aria-label="Recipe Lab AI home">
@@ -203,6 +256,11 @@ function RecipeView({
               onError={onError}
             />
           </div>
+          {culinaryTitle && (
+            <span className="hidden sm:inline-block rounded-full bg-primary/10 px-2.5 py-1 text-xs font-semibold text-primary">
+              {culinaryTitle}
+            </span>
+          )}
           <UserNav />
         </div>
       </StickyHeader>
@@ -216,10 +274,13 @@ function RecipeView({
           recipe={recipe}
           source={recipeSource}
           afterTitle={
-            <LabBanner
-              onEnterLab={onEnterLab}
-              ingredientsLoading={ingredientsLoading}
-            />
+            <>
+              <LabBanner
+                onEnterLab={onEnterLab}
+                ingredientsLoading={ingredientsLoading}
+              />
+              {feedbackPanel}
+            </>
           }
           editor={{
             derivedIngredients: editor.derivedIngredients,
@@ -246,14 +307,23 @@ function RecipeView({
 // ---------------------------------------------------------------------------
 
 export function HomePage() {
+  const culinaryTitle = useCulinaryTitle();
   const [recipe, setRecipe] = useState<ParsedRecipe | null>(null);
   const [recipeSource, setRecipeSource] = useState<"structured" | "ai">("structured");
+  const [isOcr, setIsOcr] = useState(false);
   const [editorOptions, setEditorOptions] = useState<RecipeEditorOptions>({});
   const [loading, setLoading] = useState(false);
   const [ingredientsLoading, setIngredientsLoading] = useState(false);
   const [parseError, setParseError] = useState("");
   const [view, setView] = useState<View>("recipe");
   const [labStep, setLabStep] = useState(0);
+
+  // Feedback for a saved recipe currently being viewed
+  const [activeSaved, setActiveSaved] = useState<{
+    id: string;
+    rating?: number;
+    cookNotes?: string;
+  } | null>(null);
 
   const hasRecipe = recipe !== null;
 
@@ -284,6 +354,7 @@ export function HomePage() {
       const recipe = JSON.parse(raw);
       setRecipe(recipe);
       setRecipeSource("structured");
+      setIsOcr(true);
       setEditorOptions({});
       setView("recipe");
       setLabStep(0);
@@ -309,6 +380,11 @@ export function HomePage() {
           initialUnitSystem: data.unitSystem,
           initialIngredientSwaps: data.ingredientSwaps,
         });
+        setActiveSaved({
+          id: data._id,
+          rating: data.rating,
+          cookNotes: data.cookNotes,
+        });
         setView("recipe");
         setLabStep(0);
       })
@@ -320,6 +396,7 @@ export function HomePage() {
   const handleRecipeParsed = useCallback((r: ParsedRecipe, s: "structured" | "ai") => {
     setRecipe(r);
     setRecipeSource(s);
+    setIsOcr(false);
     setEditorOptions({});
     setView("recipe");
     setLabStep(0);
@@ -342,6 +419,7 @@ export function HomePage() {
   const handleViewRecipe = useCallback(() => setView("recipe"), []);
   const handleBackToLastStep = useCallback(() => setView("lab"), []);
   const handleCookAnother = useCallback(() => {
+    setActiveSaved(null);
     setRecipe(null);
     setEditorOptions({});
     setView("recipe");
@@ -354,11 +432,15 @@ export function HomePage() {
         <RecipeView
           recipe={recipe}
           recipeSource={recipeSource}
+          isOcr={isOcr}
+          culinaryTitle={culinaryTitle}
           editorOptions={editorOptions}
           ingredientsLoading={ingredientsLoading}
           parseError={parseError}
           view={view}
           labStep={labStep}
+          activeSaved={activeSaved}
+          onActiveSavedChange={setActiveSaved}
           onRecipeParsed={handleRecipeParsed}
           onStepIngredientsMapped={handleStepIngredientsMapped}
           onError={setParseError}
@@ -401,6 +483,11 @@ export function HomePage() {
             <p className="max-w-sm text-lg text-warm-500 sm:text-xl animate-fade-up-delay-1">
               Stop Scrolling. Start Cooking.
             </p>
+            {culinaryTitle && (
+              <span className="rounded-full bg-primary/10 px-3 py-1 text-sm font-semibold text-primary animate-fade-up-delay-1">
+                {culinaryTitle}
+              </span>
+            )}
           </div>
           <div className="relative z-[1] w-full space-y-3 animate-fade-up-delay-2">
             <RecipeInput
